@@ -20,6 +20,15 @@ class Client:
     def verificar_senha(self, tentativa_senha):
         return self._generate_hash(tentativa_senha) == self.__senha
     
+    def alterar_email(self, novo_email):
+        self.email = novo_email
+    
+    def alterar_nome(self, novo_nome):
+        self.nome = novo_nome
+
+    def alterar_senha(self, nova_senha):
+        self.__senha = self._generate_hash(nova_senha)
+    
 
 
     
