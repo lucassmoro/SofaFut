@@ -1,7 +1,7 @@
 import hashlib
 import errno
 import os, pathlib
-import SofaFut.src.external.sofascore_api as sofascore_api
+from external import sofascore_api
 from repositories.users_database import UserDataBase
 
 """
