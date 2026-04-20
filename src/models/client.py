@@ -4,6 +4,11 @@ import os, pathlib
 import SofaFut.src.external.sofascore_api as sofascore_api
 from repositories.users_database import UserDataBase
 
+"""
+Classe do cliente. Os metodos de alterar dados (email, nome e senha) nao devem
+ser chamados sozinhos. Quem faz as verificacoes antes de chamar é a classe UserService
+"""
+
 class Client:
     def __init__(self, nome, cpf, email, senha, pontuacao, saldo):
 

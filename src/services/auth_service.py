@@ -1,6 +1,11 @@
 from repositories.users_database import UserDataBase
 from models.client import Client
 
+"""
+Essa classe faz o protocolo de autenticacao do usuario
+login e cadastro basicamente
+"""
+
 class AuthService: 
 
     def __init__(self, user_database : UserDataBase):
