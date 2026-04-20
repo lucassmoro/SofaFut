@@ -1,6 +1,7 @@
 from models.client import Client
 from repositories.users_database import UserDataBase
 import auth_service
+from session import Session
 
 """Essa classe é a responsavel por executar a edicao dos dados.
 Apesar de chamar os metodos de edicao de dados da classe Cliente
@@ -9,10 +10,19 @@ antes de chamar os metodos de edicao de dados
 """
 class UserService:
 
-    def __init__(self, user_database : UserDataBase):
+    def __init__(self, user_database : UserDataBase, session : Session):
         self.user_database = user_database
+        self.session = session
+
+    def _verificar_permissao(self, username):
+        if not self.session.is_logged(username):
+            raise PermissionError("Sem permissao")
+        
 
     def alterar_email(self, username, novo_email):
+
+        self._verificar_permissao(username)
+
         user = self.user_database.search_user(username)
 
         if user is None:
@@ -22,6 +32,9 @@ class UserService:
         return "Email atualizado"
     
     def alterar_nome(self, username, novo_username):
+
+        self._verificar_permissao(username)
+
         user = self.user_database.search_user(username)
 
         if user is None:
@@ -32,6 +45,8 @@ class UserService:
         return "Username atualizado"
     
     def alterar_senha(self, username, senha_atual, nova_senha):
+
+        self._verificar_permissao(username)
 
         user = self.user_database.search_user(username)
 
