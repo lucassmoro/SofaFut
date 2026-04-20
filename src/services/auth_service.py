@@ -1,34 +1,5 @@
-import hashlib
-import errno
-
-class Client:
-    def __init__(self, nome, cpf, email, senha)
-
-        self.nome = nome
-        self.cpf = cpf
-        self.email = email
-        self.__senha = self._generate_hash(senha)
-
-    def _generate_hash(self, senha):
-        return hashlib.sha256(senha.encode()).hexdigest()
-    
-    def verificar_senha(self, tentativa_senha):
-        return self._generate_hash(tentativa_senha) == self.__senha
-    
-
-class UserDataBase:
-
-    def __init__(self):
-
-        self.__usuarios_cadastrados = {}
-
-    def add_user(self, user : Client):
-
-        self.__usuarios_cadastrados[user.nome] = user
-
-    def search_user(self, username):
-        return self.__usuarios_cadastrados.get(username)
-    
+from repositories.users_database import UserDataBase
+from models.client import Client
 
 class AuthService: 
 
@@ -62,5 +33,3 @@ class AuthService:
 
         else: 
             print("Usuario nao encontrado")
-
-    
