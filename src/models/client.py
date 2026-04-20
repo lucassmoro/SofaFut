@@ -5,7 +5,7 @@ import SofaFut.src.external.sofascore_api as sofascore_api
 from repositories.users_database import UserDataBase
 
 class Client:
-    def __init__(self, nome, cpf, email, senha)
+    def __init__(self, nome, cpf, email, senha):
 
         self.nome = nome
         self.cpf = cpf
