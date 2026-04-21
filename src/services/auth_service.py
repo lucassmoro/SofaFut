@@ -1,6 +1,6 @@
-from repositories.users_database import UserDataBase
-from models.client import Client
-from session import Session
+from src.repositories.users_database import UserDataBase
+from src.models.client import Client
+from src.services.session import Session
 
 """
 Essa classe faz o protocolo de autenticacao do usuario

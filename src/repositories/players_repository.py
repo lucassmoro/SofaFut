@@ -1,6 +1,6 @@
 import json, csv
 from pathlib import Path
-from models.player import Player
+from src.models.player import Player
 
 
 class PlayerRepository:
@@ -17,8 +17,17 @@ class PlayerRepository:
 
         for jogador in data:
             
-            jogadores.append(Player(nome=jogador["nome"], time=jogador["time"], idade=jogador["idade"], gols=jogador["gols"], assistencias=jogador["assistencias"],
-                                    cartoes_amarelos=jogador["cartoes_vermelhos"], cartoes_vermelhos=jogador["cartoes_vermelhos"],
-                                    faltas=jogador["faltas"], gols_sofridos=jogador["gols_sofridos"]))    
+            jogadores.append(Player(nome=jogador["nome"],
+                                    time=jogador["time"], 
+                                    posicao=jogador["posicao"], 
+                                    idade=jogador["idade"], 
+                                    gols=jogador["gols"], 
+                                    assistencias=jogador["assistencias"],
+                                    cartoes_amarelos=jogador["cartoes_amarelos"], 
+                                    cartoes_vermelhos=jogador["cartoes_vermelhos"],
+                                    faltas=jogador["faltas"], 
+                                    gols_sofridos=jogador["gols_sofridos"]
+                                    )
+                                )    
         return jogadores
         

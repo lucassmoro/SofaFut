@@ -1,4 +1,4 @@
-from models.client import Client
+from src.models.client import Client
 
 """
 Essa classe é basicamente o banco de dados. 

@@ -1,4 +1,4 @@
-from models.client import Client
+from src.models.client import Client
 
 """
 Classe que controla o usuario logado no sistema
