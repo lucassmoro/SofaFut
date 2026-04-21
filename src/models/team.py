@@ -1,0 +1,23 @@
+from enum import Enum
+
+class Team(Enum):
+    ATHLETICO_PARANAENSE = "Athletico Paranaense"
+    ATLETICO_MINEIRO = "Atlético Mineiro"
+    BAHIA = "Bahia"
+    BOTAFOGO = "Botafogo"
+    CHAPECOENSE = "Chapecoense"
+    CORINTHIANS = "Corinthians"
+    CORITIBA = "Coritiba"
+    CRUZEIRO = "Cruzeiro"
+    FLAMENGO = "Flamengo"
+    FLUMINENSE = "Fluminense"
+    GREMIO = "Grêmio"
+    INTERNACIONAL = "Internacional"
+    MIRASSOL = "Mirassol"
+    PALMEIRAS = "Palmeiras"
+    RED_BULL_BRAGANTINO = "Red Bull Bragantino"
+    REMO = "Remo"
+    SANTOS = "Santos"
+    SAO_PAULO = "São Paulo"
+    VASCO_DA_GAMA = "Vasco da Gama"
+    VITORIA = "Vitória"
