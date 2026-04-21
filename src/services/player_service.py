@@ -12,4 +12,6 @@ class PlayerService:
         
         jogadores = self.player_repository.listar_jogadores()
 
-        jogadores.sort(key=lambda jogador : getattr(jogador, criterio), reverse=True)
+        jogadores.sort(key=lambda jogador : getattr(jogador, criterio.value), reverse=True)
+
+        return jogadores

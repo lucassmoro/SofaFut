@@ -2,7 +2,7 @@ import hashlib
 import errno
 import os, pathlib
 from external import sofascore_api
-from repositories.users_database import UserDataBase
+from src.repositories.users_database import UserDataBase
 
 """
 Classe do cliente. Os metodos de alterar dados (email, nome e senha) nao devem

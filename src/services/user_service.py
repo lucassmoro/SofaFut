@@ -1,7 +1,6 @@
-from models.client import Client
-from repositories.users_database import UserDataBase
-import auth_service
-from session import Session
+from src.models.client import Client
+from src.repositories.users_database import UserDataBase
+from src.services.session import Session
 
 """Essa classe é a responsavel por executar a edicao dos dados.
 Apesar de chamar os metodos de edicao de dados da classe Cliente
