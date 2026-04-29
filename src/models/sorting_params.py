@@ -1,6 +1,6 @@
 from enum import Enum
 
-class SortingParams(Enum):
+class Estatisticas(Enum):
 
     GOLS = "gols"
     ASSISTENCIAS = "assistencias"

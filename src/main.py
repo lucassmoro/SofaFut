@@ -1,12 +1,12 @@
 from src.repositories.players_repository import PlayerRepository
 from src.services.player_service import PlayerService
-from src.models.sorting_params import SortingParams
+from src.models.sorting_params import Estatisticas
 
 def main():
     player_repository = PlayerRepository()
     player_service = PlayerService(player_repository)
 
-    jogadores = player_service.listar_jogadores_ordenados(SortingParams.ASSISTENCIAS)
+    jogadores = player_service.listar_jogadores_ordenados(Estatisticas.ASSISTENCIAS)
 
     for jogador in jogadores:
         print(jogador.nome, jogador.assistencias)
