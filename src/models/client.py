@@ -12,12 +12,12 @@ ser chamados sozinhos. Quem faz as verificacoes antes de chamar é a classe User
 class Client:
     def __init__(self, nome, cpf, email, senha, pontuacao, saldo):
 
-        self.nome = nome
-        self.cpf = cpf
-        self.email = email
+        self.__nome = nome
+        self.__cpf = cpf
+        self.__email = email
         self.__senha = self._generate_hash(senha)
-        self.pontuacao = 0
-        self.saldo = 0
+        self.__pontuacao = pontuacao
+        self.__saldo = saldo
 
     def _generate_hash(self, senha):
         return hashlib.sha256(senha.encode()).hexdigest()
@@ -33,6 +33,46 @@ class Client:
 
     def alterar_senha(self, nova_senha):
         self.__senha = self._generate_hash(nova_senha)
+
+    @property
+    def nome(self):
+        return self.__nome
+    
+    @property
+    def cpf(self):
+        return self.__cpf
+    
+    @property
+    def email(self):
+        return self.__email
+    
+    @property
+    def pontuacao(self):
+        return self.__pontuacao
+    
+    @property
+    def saldo(self):
+        return self.__saldo
+    
+    @nome.setter
+    def nome(self, valor):
+        self.__nome = valor
+
+    @cpf.setter
+    def cpf(self, valor):
+        self.__cpf = valor
+
+    @email.setter
+    def email(self, valor):
+        self.__email = valor
+    
+    @pontuacao.setter
+    def pontuacao(self, valor):
+        self.__pontuacao = valor
+
+    @saldo.setter
+    def saldo(self, valor):
+        self.__saldo = valor
     
 
 
