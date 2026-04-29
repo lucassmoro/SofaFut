@@ -1,6 +1,6 @@
 
 from src.repositories.players_repository import PlayerRepository
-from src.models.sorting_params import Estatisticas
+from models.estatistics import Estatisticas
 from src.models.player import Player
 
 class PlayerService:

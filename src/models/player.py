@@ -1,5 +1,5 @@
 from src.models.player_position import PlayerPosition
-from src.models.team import Team
+from models.club import Team
 
 class Player:
 

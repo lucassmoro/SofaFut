@@ -1,6 +1,6 @@
 from src.repositories.players_repository import PlayerRepository
 from src.services.player_service import PlayerService
-from src.models.sorting_params import Estatisticas
+from models.estatistics import Estatisticas
 
 def main():
     player_repository = PlayerRepository()
