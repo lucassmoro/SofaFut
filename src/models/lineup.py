@@ -1,6 +1,7 @@
+from player import Player
 class Lineup():
 
-    def __init__(self, rodada, jogadores, capitao, pontuacao):
+    def __init__(self, rodada, jogadores : list[Player], capitao, pontuacao):
 
         self.__rodada = rodada
         self.__jogadores = jogadores
