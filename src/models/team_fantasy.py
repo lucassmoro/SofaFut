@@ -1,5 +1,5 @@
-from lineup import Lineup
-from client import Client
+from src.models.lineup import Lineup
+from src.models.client import Client
 
 class TeamFantasy():
 

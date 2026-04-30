@@ -1,6 +1,6 @@
 
 from src.repositories.players_repository import PlayerRepository
-from models.estatistics import Estatisticas
+from src.models.estatistics import Estatisticas
 from src.models.player import Player
 
 class PlayerService:

@@ -1,5 +1,5 @@
-from player import Player
-from player_lineup import PlayerLineup
+from src.models.player import Player
+from src.models.player_lineup import PlayerLineup
 class Lineup():
 
     def __init__(self, rodada, jogadores : list[PlayerLineup], capitao, pontuacao):
