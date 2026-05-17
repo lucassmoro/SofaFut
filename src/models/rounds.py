@@ -2,9 +2,9 @@ from src.models.match import Match
 
 class Round:
 
-    def __init__(self, numero, partidas : list[Match]):
+    def __init__(self, numero):
         self.__numero = numero
-        self.__partidas = partidas
+        self.__partidas = list[Match]
 
     @property
     def numero(self):
