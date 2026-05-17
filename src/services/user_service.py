@@ -1,4 +1,4 @@
-from src.models.client import Client
+from SofaFut.src.models.user import User
 from src.repositories.users_database import UserDataBase
 from src.services.session import Session
 

@@ -1,4 +1,4 @@
-from src.models.client import Client
+from SofaFut.src.models.user import User
 
 """
 Classe que controla o usuario logado no sistema
@@ -10,7 +10,7 @@ class Session:
     def __init__(self):
         self.current__user = None
 
-    def login(self, user : Client):
+    def login(self, user : User):
         self.current__user = user
 
     def logout(self):

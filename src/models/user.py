@@ -9,7 +9,7 @@ Classe do cliente. Os metodos de alterar dados (email, nome e senha) nao devem
 ser chamados sozinhos. Quem faz as verificacoes antes de chamar é a classe UserService
 """
 
-class Client:
+class User:
     def __init__(self, nome, cpf, email, senha, pontuacao, saldo):
 
         self.__nome = nome

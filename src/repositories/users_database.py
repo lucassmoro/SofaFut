@@ -1,4 +1,4 @@
-from src.models.client import Client
+from SofaFut.src.models.user import User
 
 """
 Essa classe é basicamente o banco de dados. 
@@ -10,7 +10,7 @@ class UserDataBase:
 
         self.__usuarios_cadastrados = {}
 
-    def add_user(self, user : Client):
+    def add_user(self, user : User):
 
         self.__usuarios_cadastrados[user.nome] = user
 

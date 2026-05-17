@@ -1,5 +1,5 @@
 from src.repositories.users_database import UserDataBase
-from src.models.client import Client
+from SofaFut.src.models.user import User
 from src.services.session import Session
 
 """
@@ -18,7 +18,7 @@ class AuthService:
 
         if self.user_database.search_user(username) is None:
             
-            self.user_database.add_user(Client(username, cpf, email, senha))
+            self.user_database.add_user(User(username, cpf, email, senha))
 
         else:
             print("Usuario com esse username ja cadastrado")
