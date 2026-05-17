@@ -22,4 +22,14 @@ class FantasyScoreService:
         return escalacao.pontuacao
 
     def calculo_pontuacao_logica(self, jogador : MatchPlayerStats):
-        pass
+        pontuacao = 0
+        if jogador.atuou:
+
+            pontuacao += jogador.gols * 40
+            pontuacao += jogador.assistencias * 20
+            pontuacao -= jogador.cartoes_amarelos * 10
+            pontuacao -= jogador.cartoes_vermelhos * 50
+            pontuacao += jogador.faltas * 3
+            pontuacao -= jogador.gols_sofridos * 10
+
+        return pontuacao
