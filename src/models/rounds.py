@@ -21,3 +21,6 @@ class Round:
     @partidas.setter
     def partidas(self, partidas):
         self.__partidas = partidas
+
+    def adicionar_partidas_rodada(self, partida : Match):
+        self.partidas.append(partida)
