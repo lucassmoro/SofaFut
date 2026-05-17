@@ -1,13 +1,15 @@
 from src.models.club import Club
+from src.models.team_fantasy import TeamFantasy
 
 class Player:
 
-    def __init__(self, nome, time : Club, posicao, idade):
+    def __init__(self, nome, time : Club, posicao, idade, nome_team_fantasy):
         
         self.__nome = nome
         self.__time = time
         self.__posicao = posicao
         self.__idade = idade
+        self.__nome_team_fantasy = TeamFantasy(nome_team_fantasy, [])
 
     @property
     def nome(self):
@@ -40,3 +42,11 @@ class Player:
     @idade.setter
     def idade(self, idade):
         self.__idade = idade
+
+    @property
+    def nome_team_fantasy(self):
+        return self.__nome_team_fantasy
+    
+    @nome_team_fantasy.setter
+    def nome_team_fantasy(self, nome):
+        self.__nome_team_fantasy = nome

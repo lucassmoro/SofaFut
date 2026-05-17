@@ -3,11 +3,10 @@ from SofaFut.src.models.user import User
 
 class TeamFantasy():
 
-    def __init__(self, nome, escalacoes : list[Lineup], dono_user : User.nome):
+    def __init__(self, nome, escalacoes : list[Lineup]):
 
         self.__nome = nome
         self.__escalacoes = escalacoes
-        self.__dono_user = dono_user
 
     @property
     def nome(self):
@@ -24,11 +23,3 @@ class TeamFantasy():
     @escalacoes.setter
     def escalacoes(self, escalacoes):
         self.__escalacoes = escalacoes
-
-    @property
-    def dono_user(self):
-        return self.__dono_user
-
-    @dono_user.setter
-    def dono_user(self, dono_user):
-        self.__dono_user = dono_user
