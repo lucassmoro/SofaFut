@@ -2,7 +2,7 @@ from src.models.club import Club
 
 class Player:
 
-    def __init__(self, nome, time, posicao, idade, gols, 
+    def __init__(self, nome, time : Club, posicao, idade, gols, 
                  assistencias, cartoes_amarelos, cartoes_vermelhos, faltas, gols_sofridos):
         
         self.__nome = nome

@@ -1,6 +1,8 @@
-class PlayerLineup:
+from src.models.player import Player
 
-    def __init__(self, jogador, capitao, atuou, titular, pontuacao):
+class PlayerFantasy:
+
+    def __init__(self, jogador : Player, capitao, atuou, titular, pontuacao):
     
         self.jogador = jogador
         self.capitao = capitao

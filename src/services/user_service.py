@@ -56,3 +56,13 @@ class UserService:
             user.alterar_senha(nova_senha)
         else: 
             return "Senha incorreta"
+        
+    def atribuir_pontuacao(self, username, pontuacao):
+
+        user = self.user_database.search_user(username)
+
+        if user is not None:
+            user.pontuacao += pontuacao
+
+        else: 
+            return "Usuario nao encontrado"
