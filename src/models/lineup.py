@@ -1,12 +1,11 @@
 from src.models.player import Player
-from SofaFut.src.models.player_fantasy import PlayerFantasy
+from src.models.player_fantasy import PlayerFantasy
 class Lineup():
 
-    def __init__(self, rodada, jogadores : list[PlayerFantasy], capitao, pontuacao):
+    def __init__(self, rodada, jogadores : list[PlayerFantasy], pontuacao):
 
         self.__rodada = rodada
         self.__jogadores = jogadores
-        self.__capitao = capitao
         self.__pontuacao = pontuacao
 
     @property
@@ -24,14 +23,6 @@ class Lineup():
     @jogadores.setter
     def jogadores(self, jogadores):
         self.__jogadores = jogadores
-
-    @property
-    def capitao(self):
-        return self.__capitao
-
-    @capitao.setter
-    def capitao(self, capitao):
-        self.__capitao = capitao
 
     @property
     def pontuacao(self):

@@ -4,7 +4,7 @@ class Round:
 
     def __init__(self, numero):
         self.__numero = numero
-        self.__partidas = list[Match]
+        self.__partidas : list[Match] = []
 
     @property
     def numero(self):

@@ -17,19 +17,23 @@ class FantasyScoreService:
                 for jogador_fantasy in escalacao.jogadores: # acesssa os player_fantasy
                     
                     if jogador_fantasy.jogador == jogador.jogador: # verifica se ambos player_ referenciam o mesmo jogador
-                        escalacao.pontuacao += self.calculo_pontuacao_logica(jogador)
+                        jogador_fantasy.pontuacao = self.calculo_pontuacao_logica(jogador, jogador_fantasy.capitao)
+                        escalacao.pontuacao += jogador_fantasy.pontuacao
 
         return escalacao.pontuacao
 
-    def calculo_pontuacao_logica(self, jogador : MatchPlayerStats):
+    def calculo_pontuacao_logica(self, jogador : MatchPlayerStats, capitao : bool):
         pontuacao = 0
         if jogador.atuou:
 
-            pontuacao += jogador.gols * 40
+            pontuacao += jogador.gols * 40 
             pontuacao += jogador.assistencias * 20
             pontuacao -= jogador.cartoes_amarelos * 10
             pontuacao -= jogador.cartoes_vermelhos * 50
             pontuacao += jogador.faltas * 3
             pontuacao -= jogador.gols_sofridos * 10
+
+        if capitao:
+            pontuacao *= 2
 
         return pontuacao
