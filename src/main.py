@@ -25,13 +25,13 @@ def main():
     # =========================
     # Players
     # =========================
-    alan = Player("Alan Patrick", None, "meia", 33, 0, 0, 0, 0, 0, 0)
-    borre = Player("Borré", None, "atacante", 28, 0, 0, 0, 0, 0, 0)
-    rochet = Player("Rochet", None, "goleiro", 31, 0, 0, 0, 0, 0, 0)
+    alan = Player("Alan Patrick", None, "meia", 33)
+    borre = Player("Borré", None, "atacante", 28)
+    rochet = Player("Rochet", None, "goleiro", 31)
 
-    arrascaeta = Player("Arrascaeta", None, "meia", 30, 0, 0, 0, 0, 0, 0)
-    pedro = Player("Pedro", None, "atacante", 27, 0, 0, 0, 0, 0, 0)
-    leo_pereira = Player("Leo Pereira", None, "zagueiro", 29, 0, 0, 0, 0, 0, 0)
+    arrascaeta = Player("Arrascaeta", None, "meia", 30)
+    pedro = Player("Pedro", None, "atacante", 27)
+    leo_pereira = Player("Leo Pereira", None, "zagueiro", 29)
 
     # =========================
     # Clubs
