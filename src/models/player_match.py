@@ -5,8 +5,8 @@ class MatchPlayerStats:
     def __init__(
         self,
         jogador: Player,
-        atuou,
-        titular,
+        atuou : bool,
+        titular : bool,
         gols,
         assistencias,
         cartoes_amarelos,
