@@ -3,6 +3,7 @@ import errno
 import os, pathlib
 from external import sofascore_api
 from src.repositories.users_database import UserDataBase
+from src.models.team_fantasy import TeamFantasy
 
 """
 Classe do cliente. Os metodos de alterar dados (email, nome e senha) nao devem
@@ -10,7 +11,7 @@ ser chamados sozinhos. Quem faz as verificacoes antes de chamar é a classe User
 """
 
 class User:
-    def __init__(self, nome, cpf, email, senha, pontuacao, saldo):
+    def __init__(self, nome, cpf, email, senha, pontuacao, saldo, nome_team_fantasy):
 
         self.__nome = nome
         self.__cpf = cpf
@@ -18,6 +19,7 @@ class User:
         self.__senha = self._generate_hash(senha)
         self.__pontuacao = pontuacao
         self.__saldo = saldo
+        self.__team_fantasy = TeamFantasy(nome_team_fantasy)
 
     def _generate_hash(self, senha):
         return hashlib.sha256(senha.encode()).hexdigest()
@@ -73,6 +75,14 @@ class User:
     @saldo.setter
     def saldo(self, valor):
         self.__saldo = valor
+    
+    @property
+    def team_fantasy(self):
+        return self.__team_fantasy
+    
+    @team_fantasy.setter
+    def team_fantasy(self, nome):
+        self.__team_fantasy = nome
     
 
 
