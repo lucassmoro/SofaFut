@@ -5,8 +5,10 @@ from src.models.player_match import MatchPlayerStats
 from src.models.player_fantasy import PlayerFantasy
 from src.models.player import Player
 from src.repositories.rounds_repository import RoundRepository
+from src.models.user import User
+from src.models.team_fantasy import TeamFantasy
 
-class FantasyScoreService:
+class TeamFantasyService:
 
     def calcular_pontuacao_lineup(self, escalacao : Lineup, rodadas_repo : RoundRepository):
 
@@ -37,3 +39,32 @@ class FantasyScoreService:
             pontuacao *= 2
 
         return pontuacao
+    
+    def montar_escalacao(self, user : User, rodada : int, jogadores : list[PlayerFantasy], rodadas_repo : RoundRepository):
+        team = user.team_fantasy
+
+        if len(jogadores) != 11:
+            raise Exception("QUANTIDADE INCORRETA DE JOGADORES")        
+
+        capitao = 0
+        for jogador in jogadores:
+            if jogador.capitao:
+                capitao += 1
+
+        if capitao != 1: 
+            raise Exception("QUANTIDADE DE CAPITAO INCORRETA")
+        
+        team.escalacoes[rodada] = Lineup(rodada=rodada, jogadores=jogadores)
+
+        return team.escalacoes[rodada]
+
+
+    def executar_rodada(self, user : User, rodada : int, jogadores : list[PlayerFantasy], rodadas_repo : RoundRepository):
+        
+        # primeiro tem que fazer uma verificacao se a rodada ja existe, se ja existir vai estar em cache em algum arquivo json
+        # e dai é so acessar o arquivo. Se nao estiver dai tem que ver se faz uma chamada de API pra verificar se esta disponivel
+
+        lineup = self.montar_escalacao(user, rodada, jogadores)
+
+        user.pontuacao += self.calcular_pontuacao_lineup(lineup, rodadas_repo)
+        

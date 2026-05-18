@@ -2,11 +2,11 @@ from src.models.player import Player
 from src.models.player_fantasy import PlayerFantasy
 class Lineup():
 
-    def __init__(self, rodada, jogadores : list[PlayerFantasy], pontuacao):
+    def __init__(self, rodada, jogadores : list[PlayerFantasy]):
 
         self.__rodada = rodada
         self.__jogadores = jogadores
-        self.__pontuacao = pontuacao
+        self.__pontuacao = 0
 
     @property
     def rodada(self):

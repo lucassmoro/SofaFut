@@ -2,7 +2,7 @@ from src.repositories.players_repository import PlayerRepository
 from src.services.player_service import PlayerService
 from src.models.estatistics import Estatisticas
 from src.external.api_client import SofaScoreApiClient
-from src.services.fantasy_score_service import FantasyScoreService
+from SofaFut.src.services.team_fantasy_service import TeamFantasyService
 from src.models.match import Match
 from src.models.rounds import Round
 from src.models.lineup import Lineup
@@ -168,7 +168,7 @@ def main():
     # =========================
     # Calcula pontuacao
     # =========================
-    service = FantasyScoreService()
+    service = TeamFantasyService()
     pontuacao = service.calcular_pontuacao_lineup(escalacao, rodadas_repo)
 
     print("Pontuação total da escalação:", pontuacao)
