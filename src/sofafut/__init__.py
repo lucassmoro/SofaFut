@@ -1,0 +1,1 @@
+"""SofaFut MVC package."""
