@@ -11,7 +11,7 @@ RF12  : O sistema deve disponibilizar um ranking da pontuação dos
 """
 
 from src.models.ranking_entry import RankingEntry
-from src.repositories.ranking_repository import RankingRepository
+#from src.repositories.ranking_repository import RankingRepository
 
 
 class RankingService:
