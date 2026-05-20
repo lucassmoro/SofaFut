@@ -40,7 +40,7 @@ class TeamFantasyService:
 
         return pontuacao
     
-    def montar_escalacao(self, user : User, rodada : int, jogadores : list[PlayerFantasy], rodadas_repo : RoundRepository):
+    def montar_escalacao(self, user : User, rodada : int, jogadores : list[PlayerFantasy]):
         team = user.team_fantasy
 
         if len(jogadores) != 11:

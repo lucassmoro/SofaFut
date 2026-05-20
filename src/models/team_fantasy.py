@@ -1,5 +1,4 @@
 from src.models.lineup import Lineup
-from SofaFut.src.models.user import User
 
 class TeamFantasy():
 

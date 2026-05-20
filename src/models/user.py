@@ -1,8 +1,7 @@
 import hashlib
 import errno
 import os, pathlib
-from external import sofascore_api
-from src.repositories.users_database import UserDataBase
+#from external import sofascore_api
 from src.models.team_fantasy import TeamFantasy
 
 """

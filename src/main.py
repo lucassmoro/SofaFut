@@ -1,8 +1,8 @@
 from src.repositories.players_repository import PlayerRepository
 from src.services.player_service import PlayerService
 from src.models.estatistics import Estatisticas
-from src.external.api_client import SofaScoreApiClient
-from SofaFut.src.services.team_fantasy_service import TeamFantasyService
+#from src.external.api_client import SofaScoreApiClient
+from src.services.team_fantasy_service import TeamFantasyService
 from src.models.match import Match
 from src.models.rounds import Round
 from src.models.lineup import Lineup
@@ -161,8 +161,7 @@ def main():
 
     escalacao = Lineup(
         rodada=0,
-        jogadores=[fantasy_alan, fantasy_borre, fantasy_pedro],
-        pontuacao=0
+        jogadores=[fantasy_alan, fantasy_borre, fantasy_pedro]
     )
 
     # =========================

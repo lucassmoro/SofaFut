@@ -1,4 +1,4 @@
-from SofaFut.src.models.user import User
+from src.models.user import User
 
 """
 Essa classe é basicamente o banco de dados. 

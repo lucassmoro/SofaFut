@@ -1,5 +1,4 @@
 from src.models.club import Club
-from src.models.team_fantasy import TeamFantasy
 
 class Player:
 
