@@ -1,4 +1,4 @@
-from SofaFut.src.models.user import User
+from src.models.user import User
 
 """
 Classe que controla o usuario logado no sistema

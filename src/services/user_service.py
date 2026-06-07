@@ -1,7 +1,7 @@
-from SofaFut.src.models.user import User
+from src.models.user import User
 from src.repositories.users_database import UserDataBase
 from src.services.session import Session
-from SofaFut.src.services.team_fantasy_service import TeamFantasyService
+from src.services.team_fantasy_service import TeamFantasyService
 
 """Essa classe é a responsavel por executar a edicao dos dados.
 Apesar de chamar os metodos de edicao de dados da classe Cliente
