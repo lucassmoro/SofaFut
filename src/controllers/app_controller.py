@@ -29,14 +29,18 @@ class AppController:
         self.user_database = user_database or UserDataBase()
         self.player_repository = player_repository or PlayerRepository(api_client=sofa_api)
         self.round_repository = round_repository or RoundRepository()
+        self.api_football = api_football
 
         self.auth_service = AuthService(self.user_database, self.session)
         self.user_service = UserService(self.user_database, self.session)
         self.team_fantasy_service = TeamFantasyService()
-        self.player_service = PlayerService(self.player_repository)
+        self.player_service = PlayerService(
+            self.player_repository,
+            api_football=self.api_football,
+        )
         self.match_service = MatchService(
             sofa_api=sofa_api or SofaScoreApiClient(),
-            api_football=api_football,
+            api_football=self.api_football,
         )
 
     def cadastrar_usuario(
@@ -82,6 +86,35 @@ class AppController:
             criterio = Estatisticas[criterio.upper()]
 
         return self.player_service.listar_jogadores_ordenados(criterio)
+
+    def carregar_jogadores_brasileirao_temporada(
+        self,
+        temporada,
+        liga_id=71,
+        usar_cache=True,
+        max_paginas=None,
+        paginas_por_execucao=1,
+    ):
+        return self.player_service.carregar_jogadores_brasileirao_temporada(
+            temporada=temporada,
+            liga_id=liga_id,
+            usar_cache=usar_cache,
+            max_paginas=max_paginas,
+            paginas_por_execucao=paginas_por_execucao,
+        )
+
+    def carregar_jogadores_temporada_cache(self, liga_id, temporada):
+        return self.player_service.carregar_jogadores_temporada_cache(
+            liga_id=liga_id,
+            temporada=temporada,
+        )
+
+    def adicionar_jogadores_descobertos_na_rodada(self, liga_id, temporada, dados_rodada):
+        return self.player_service.adicionar_jogadores_descobertos_na_rodada(
+            liga_id=liga_id,
+            temporada=temporada,
+            dados_rodada=dados_rodada,
+        )
 
     def montar_escalacao(
         self,
@@ -173,6 +206,9 @@ class AppController:
             rodada=rodada,
             status=status,
         )
+
+    def buscar_partidas_por_ids_api_football(self, fixture_ids):
+        return self.match_service.buscar_partidas_por_ids_api_football(fixture_ids)
 
     def montar_rodada_por_fixture_api_football(
         self,

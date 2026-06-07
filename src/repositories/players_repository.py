@@ -12,6 +12,9 @@ class PlayerRepository:
     def listar_jogadores(self):
         return self._jogadores
 
+    def definir_jogadores(self, jogadores):
+        self._jogadores = jogadores
+
     def atualizar_jogadores(self):
         pass
         #dados = self._api_client.buscar_jogadores()
@@ -27,12 +30,8 @@ class PlayerRepository:
                     time=jogador["time"],
                     posicao=jogador["posicao"],
                     idade=jogador["idade"],
-                    gols=jogador["gols"],
-                    assistencias=jogador["assistencias"],
-                    cartoes_amarelos=jogador["cartoes_amarelos"],
-                    cartoes_vermelhos=jogador["cartoes_vermelhos"],
-                    faltas=jogador["faltas"],
-                    gols_sofridos=jogador["gols_sofridos"]
+                    api_id=jogador.get("api_id"),
+                    nome_time=jogador.get("nome_time"),
                 )
             )
 

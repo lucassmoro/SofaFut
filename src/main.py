@@ -1,142 +1,141 @@
 import os
 
 from src.controllers import AppController
-from src.models.club import Club
-from src.models.player import Player
-from src.models.player_fantasy import PlayerFantasy
+from src.controllers import AuthController
+from src.controllers import LineupController
+from src.controllers import PlayerCatalogController
+from src.controllers import RankingController
+from src.controllers import RoundController
+from src.views import ConsoleView
 
 
 def main():
+    view = ConsoleView()
+
     if not os.getenv("API_FOOTBALL_KEY"):
-        print("Configure sua chave da API-Football antes de testar:")
+        view.mostrar_erro("Configure API_FOOTBALL_KEY antes de testar.")
         print('export API_FOOTBALL_KEY="sua_chave_aqui"')
         return
 
+    app_controller = AppController()
+    auth_controller = AuthController(app_controller)
+    player_catalog_controller = PlayerCatalogController(app_controller)
+    round_controller = RoundController(app_controller)
+    lineup_controller = LineupController(app_controller)
+    ranking_controller = RankingController(app_controller)
+
     try:
-        testar_fluxo_por_rodada()
+        testar_fluxo_console(
+            view=view,
+            auth_controller=auth_controller,
+            player_catalog_controller=player_catalog_controller,
+            round_controller=round_controller,
+            lineup_controller=lineup_controller,
+            ranking_controller=ranking_controller,
+        )
     except RuntimeError as erro:
-        print(f"Erro ao testar API-Football: {erro}")
+        view.mostrar_erro(str(erro))
 
 
-def testar_fluxo_por_rodada():
-    controller = AppController()
-
+def testar_fluxo_console(
+    view,
+    auth_controller,
+    player_catalog_controller,
+    round_controller,
+    lineup_controller,
+    ranking_controller,
+):
     liga_id = _env_int("API_FOOTBALL_LEAGUE_ID", padrao=71)
     temporada = _env_int("API_FOOTBALL_SEASON", padrao=2024)
     numero_rodada = _env_int("SOFAFUT_ROUND_NUMBER", padrao=1)
-    rodada_api = _rodada_api_football(numero_rodada)
     max_partidas = _env_int("API_FOOTBALL_MAX_FIXTURES", padrao=2)
+    max_paginas_jogadores = _env_int("API_FOOTBALL_MAX_PLAYER_PAGES", padrao=3)
+    paginas_jogadores_por_execucao = _env_int(
+        "API_FOOTBALL_PLAYER_PAGES_PER_RUN",
+        padrao=1,
+    )
 
     username = "lucas"
     senha = "senha"
 
-    controller.cadastrar_usuario(
+    auth_controller.cadastrar(
         username=username,
+        senha=senha,
         cpf="000",
         email="lucas@email.com",
-        senha=senha,
         nome_team_fantasy="SofaFut FC",
     )
-    print(controller.login(username, senha))
+    view.mostrar_login(auth_controller.login(username, senha))
 
-    print(
-        f"\nTemporada escolhida: {temporada}"
-        f"\nRodada escolhida: {numero_rodada}"
-        f"\nBaixando/cacheando partidas e estatisticas de '{rodada_api}'..."
-    )
-    dados_rodada = controller.baixar_dados_rodada_api_football(
+    view.mostrar_temporada_rodada(temporada, numero_rodada)
+
+    jogadores_temporada = player_catalog_controller.carregar_jogadores_temporada(
         liga_id=liga_id,
         temporada=temporada,
-        rodada=rodada_api,
+        max_paginas=max_paginas_jogadores,
+        paginas_por_execucao=paginas_jogadores_por_execucao,
+    )
+    view.mostrar_catalogo_jogadores(jogadores_temporada)
+
+    dados_rodada = round_controller.baixar_dados_rodada(
+        liga_id=liga_id,
+        temporada=temporada,
+        numero_rodada=numero_rodada,
         status="FT",
         max_partidas=max_partidas,
     )
-
-    total_partidas = len(dados_rodada.get("partidas_api", {}).get("response", []))
-    print(
-        f"Partidas com estatisticas em cache: "
-        f"{len(dados_rodada.get('partidas', []))}/{total_partidas}"
-    )
-    print(
-        "Para baixar mais partidas da mesma rodada em outra execucao, "
-        "aumente API_FOOTBALL_MAX_FIXTURES ou rode novamente."
-    )
-
-    jogadores_disponiveis = (
-        controller.listar_jogadores_disponiveis_cache_rodada_api_football(
-            liga_id,
-            temporada,
-            rodada_api,
-        )
-    )
-    _print_jogadores_disponiveis(jogadores_disponiveis)
-
-    if len(jogadores_disponiveis) < 11:
-        print("\nNao ha jogadores suficientes no cache para montar uma escalacao.")
-        return
-
-    jogadores = _criar_jogadores_por_cache(jogadores_disponiveis[:11])
-    escalacao_fantasy = [
-        PlayerFantasy(jogador, indice == 0, 0)
-        for indice, jogador in enumerate(jogadores)
-    ]
-
-    rodada_model = controller.montar_rodada_por_cache_rodada_api_football(
+    view.mostrar_resumo_cache_rodada(dados_rodada)
+    novos_jogadores = player_catalog_controller.adicionar_jogadores_descobertos_na_rodada(
         liga_id=liga_id,
         temporada=temporada,
-        rodada=rodada_api,
+        dados_rodada=dados_rodada,
+    )
+
+    if novos_jogadores:
+        print(f"\nCatalogo atualizado com {novos_jogadores} jogadores da rodada.")
+
+    jogadores_disponiveis = round_controller.listar_jogadores_disponiveis(
+        liga_id=liga_id,
+        temporada=temporada,
+        numero_rodada=numero_rodada,
+    )
+    view.mostrar_jogadores_disponiveis_rodada(jogadores_disponiveis)
+
+    if len(jogadores_disponiveis) < 11:
+        raise RuntimeError("Nao ha jogadores suficientes no cache para montar escalacao.")
+
+    jogadores = lineup_controller.selecionar_players_do_catalogo(
+        jogadores_disponiveis[:11]
+    )
+
+    if len(jogadores) < 11:
+        raise RuntimeError(
+            "Catalogo de jogadores ainda nao contem os 11 jogadores escolhidos. "
+            "Baixe mais paginas ou cacheie a rodada para adicionar esses jogadores ao catalogo."
+        )
+
+    jogadores_fantasy = lineup_controller.criar_escalacao_fantasy(jogadores)
+
+    rodada_model = round_controller.montar_rodada_por_cache(
+        liga_id=liga_id,
+        temporada=temporada,
         numero_rodada=numero_rodada,
         jogadores_escalados=jogadores,
     )
-    controller.adicionar_rodada(rodada_model)
+    round_controller.adicionar_rodada(rodada_model)
 
-    pontuacao_total = controller.executar_rodada(
+    pontuacao_total = lineup_controller.executar_rodada(
         username=username,
-        rodada=numero_rodada,
-        jogadores=escalacao_fantasy,
+        numero_rodada=numero_rodada,
+        jogadores_fantasy=jogadores_fantasy,
     )
 
-    escalacao = controller.usuario_logado().team_fantasy.escalacoes[numero_rodada]
-
-    print(f"\nPontuacao total da rodada {numero_rodada}: {pontuacao_total}")
-    print("Pontuacao por jogador:")
-
-    for jogador_fantasy in escalacao.jogadores:
-        jogador = jogador_fantasy.jogador
-        capitao = " (capitao)" if jogador_fantasy.capitao else ""
-        print(
-            f"- {jogador.nome}{capitao}: "
-            f"{jogador_fantasy.pontuacao} pontos"
-        )
-
-
-def _criar_jogadores_por_cache(jogadores_disponiveis):
-    jogadores = [
-        Player(
-            nome=jogador["nome"],
-            time=None,
-            posicao=jogador["posicao"] or "desconhecida",
-            idade=jogador["idade"],
-        )
-        for jogador in jogadores_disponiveis
-    ]
-    clube = Club("Escalacao via cache da rodada", jogadores, 0, 0, 0, 0)
-
-    for jogador in jogadores:
-        jogador.time = clube
-
-    return jogadores
-
-
-def _print_jogadores_disponiveis(jogadores, limite=40):
-    print("\nJogadores disponiveis no cache da rodada:")
-
-    for indice, jogador in enumerate(jogadores[:limite], start=1):
-        print(
-            f"{indice}. {jogador['nome']} - {jogador['time']} - "
-            f"{jogador['posicao']} - {jogador['minutos']} minutos - "
-            f"{jogador['partida']}"
-        )
+    view.mostrar_pontuacao(
+        numero_rodada,
+        pontuacao_total,
+        jogadores_fantasy,
+    )
+    view.mostrar_ranking(ranking_controller.formatar_ranking_usuarios())
 
 
 def _env_int(nome, padrao=None):
@@ -144,13 +143,6 @@ def _env_int(nome, padrao=None):
     if not valor:
         return padrao
     return int(valor)
-
-
-def _rodada_api_football(numero_rodada):
-    if numero_rodada < 1 or numero_rodada > 38:
-        raise RuntimeError("A rodada precisa estar entre 1 e 38")
-
-    return f"Regular Season - {numero_rodada}"
 
 
 if __name__ == "__main__":

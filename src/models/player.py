@@ -1,13 +1,21 @@
-from src.models.club import Club
-
 class Player:
 
-    def __init__(self, nome, time : Club, posicao, idade):
+    def __init__(
+        self,
+        nome,
+        time=None,
+        posicao=None,
+        idade=0,
+        api_id=None,
+        nome_time=None,
+    ):
         
         self.__nome = nome
         self.__time = time
         self.__posicao = posicao
         self.__idade = idade
+        self.__api_id = api_id
+        self.__nome_time = nome_time
         
 
     @property
@@ -41,3 +49,19 @@ class Player:
     @idade.setter
     def idade(self, idade):
         self.__idade = idade
+
+    @property
+    def api_id(self):
+        return self.__api_id
+
+    @api_id.setter
+    def api_id(self, api_id):
+        self.__api_id = api_id
+
+    @property
+    def nome_time(self):
+        return self.__nome_time
+
+    @nome_time.setter
+    def nome_time(self, nome_time):
+        self.__nome_time = nome_time

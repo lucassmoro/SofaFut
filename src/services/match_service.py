@@ -98,6 +98,9 @@ class MatchService():
             status=status,
         )
 
+    def buscar_partidas_por_ids_api_football(self, fixture_ids):
+        return self._api_football().buscar_partidas_por_ids(fixture_ids)
+
     def montar_rodada_por_fixture_api_football(
         self,
         fixture_id,
@@ -129,8 +132,12 @@ class MatchService():
         }
 
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with caminho_cache.open("w", encoding="utf-8") as arquivo:
+        caminho_temporario = caminho_cache.with_suffix(caminho_cache.suffix + ".tmp")
+
+        with caminho_temporario.open("w", encoding="utf-8") as arquivo:
             json.dump(dados_partida, arquivo, ensure_ascii=False, indent=2)
+
+        caminho_temporario.replace(caminho_cache)
 
         return dados_partida
 
@@ -179,9 +186,11 @@ class MatchService():
         caminho_cache = self._caminho_cache_rodada(liga_id, temporada, rodada)
 
         if usar_cache and caminho_cache.exists():
-            dados_rodada = self.carregar_dados_rodada_api_football(
-                liga_id, temporada, rodada
-            )
+            dados_rodada = self._carregar_cache_rodada_ou_none(caminho_cache)
+        else:
+            dados_rodada = None
+
+        if dados_rodada is not None:
             partidas_api = dados_rodada.get("partidas_api", {})
         else:
             partidas_api = self.buscar_partidas_por_rodada_api_football(
@@ -198,11 +207,10 @@ class MatchService():
                 "partidas": [],
             }
 
-        baixadas = {
-            partida_cache["fixture_id"]
-            for partida_cache in dados_rodada.get("partidas", [])
-        }
-        novas_partidas = 0
+        self._normalizar_cache_rodada(dados_rodada)
+        self._remover_partidas_duplicadas_cache(dados_rodada)
+        baixadas = self._fixture_ids_cacheados(dados_rodada)
+        partidas_para_baixar = []
 
         for partida in partidas_api.get("response", []):
             fixture_id = partida["fixture"]["id"]
@@ -210,8 +218,28 @@ class MatchService():
             if fixture_id in baixadas:
                 continue
 
-            if max_partidas is not None and novas_partidas >= max_partidas:
+            if max_partidas is not None and len(partidas_para_baixar) >= max_partidas:
                 break
+
+            partidas_para_baixar.append(partida)
+
+        self._baixar_estatisticas_partidas_rodada(
+            caminho_cache,
+            dados_rodada,
+            partidas_para_baixar,
+        )
+
+        self._salvar_cache_rodada(caminho_cache, dados_rodada)
+        return dados_rodada
+
+    def _baixar_estatisticas_partidas_rodada(
+        self,
+        caminho_cache,
+        dados_rodada,
+        partidas_para_baixar,
+    ):
+        for partida in partidas_para_baixar:
+            fixture_id = partida["fixture"]["id"]
 
             try:
                 estatisticas_api = self.buscar_estatisticas_jogadores_partida(
@@ -224,27 +252,64 @@ class MatchService():
             dados_rodada["partidas"].append(
                 {
                     "fixture_id": fixture_id,
-                    "partida": {"response": [partida]},
                     "estatisticas_jogadores": estatisticas_api,
                 }
             )
-            baixadas.add(fixture_id)
-            novas_partidas += 1
+            self._remover_partidas_duplicadas_cache(dados_rodada)
             self._salvar_cache_rodada(caminho_cache, dados_rodada)
-
-        self._salvar_cache_rodada(caminho_cache, dados_rodada)
-        return dados_rodada
 
     def _salvar_cache_rodada(self, caminho_cache, dados_rodada):
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with caminho_cache.open("w", encoding="utf-8") as arquivo:
+        caminho_temporario = caminho_cache.with_suffix(caminho_cache.suffix + ".tmp")
+
+        with caminho_temporario.open("w", encoding="utf-8") as arquivo:
             json.dump(dados_rodada, arquivo, ensure_ascii=False, indent=2)
+
+        caminho_temporario.replace(caminho_cache)
+
+    def _fixture_ids_cacheados(self, dados_rodada):
+        return {
+            int(partida_cache["fixture_id"])
+            for partida_cache in dados_rodada.get("partidas", [])
+        }
+
+    def _remover_partidas_duplicadas_cache(self, dados_rodada):
+        partidas_unicas = {}
+
+        for partida_cache in dados_rodada.get("partidas", []):
+            partidas_unicas[int(partida_cache["fixture_id"])] = partida_cache
+
+        dados_rodada["partidas"] = list(partidas_unicas.values())
+
+    def _normalizar_cache_rodada(self, dados_rodada):
+        fixture_ids_partidas_api = {
+            int(partida.get("fixture", {}).get("id", 0))
+            for partida in dados_rodada.get("partidas_api", {}).get("response", [])
+        }
+
+        for partida_cache in dados_rodada.get("partidas", []):
+            fixture_id = int(partida_cache.get("fixture_id", 0))
+
+            if fixture_id in fixture_ids_partidas_api:
+                partida_cache.pop("partida", None)
 
     def carregar_dados_rodada_api_football(self, liga_id, temporada, rodada):
         caminho_cache = self._caminho_cache_rodada(liga_id, temporada, rodada)
+        dados_rodada = self._carregar_cache_rodada_ou_none(caminho_cache)
 
-        with caminho_cache.open("r", encoding="utf-8") as arquivo:
-            return json.load(arquivo)
+        if dados_rodada is None:
+            raise RuntimeError(
+                f"Cache da rodada esta vazio ou invalido: {caminho_cache}"
+            )
+
+        return dados_rodada
+
+    def _carregar_cache_rodada_ou_none(self, caminho_cache):
+        try:
+            with caminho_cache.open("r", encoding="utf-8") as arquivo:
+                return json.load(arquivo)
+        except (OSError, json.JSONDecodeError):
+            return None
 
     def listar_jogadores_disponiveis_cache_rodada_api_football(
         self,
@@ -260,8 +325,9 @@ class MatchService():
         jogadores = []
 
         for dados_partida in dados_rodada.get("partidas", []):
-            fixture = dados_partida["partida"]["response"][0]
             fixture_id = dados_partida["fixture_id"]
+            partida_api = self._buscar_partida_cache_rodada(dados_rodada, fixture_id)
+            fixture = partida_api["response"][0]
             nome_partida = fixture.get("teams", {}).get("home", {}).get("name")
             nome_partida += " x "
             nome_partida += fixture.get("teams", {}).get("away", {}).get("name")
@@ -279,6 +345,7 @@ class MatchService():
                     if minutos > 0:
                         jogadores.append(
                             {
+                                "api_id": jogador_api.get("player", {}).get("id"),
                                 "nome": jogador_api.get("player", {}).get("name"),
                                 "time": nome_time,
                                 "posicao": stats[0].get("games", {}).get("position"),
@@ -307,8 +374,12 @@ class MatchService():
         rodada_model = Round(numero_rodada)
 
         for dados_partida in dados_rodada.get("partidas", []):
+            partida_api = self._buscar_partida_cache_rodada(
+                dados_rodada,
+                dados_partida["fixture_id"],
+            )
             partida = self._converter_fixture_para_match(
-                partida_api=dados_partida["partida"],
+                partida_api=partida_api,
                 estatisticas_api=dados_partida["estatisticas_jogadores"],
                 jogadores_escalados=jogadores_escalados,
             )
@@ -344,6 +415,23 @@ class MatchService():
         rodada_normalizada = self._normalizar_nome(rodada).replace(" ", "_")
         return self.CACHE_DIR / f"round_{liga_id}_{temporada}_{rodada_normalizada}.json"
 
+    def _buscar_partida_cache_rodada(self, dados_rodada, fixture_id):
+        fixture_id = int(fixture_id)
+
+        for partida in dados_rodada.get("partidas_api", {}).get("response", []):
+            if int(partida.get("fixture", {}).get("id", 0)) == fixture_id:
+                return {"response": [partida]}
+
+        for partida_cache in dados_rodada.get("partidas", []):
+            if int(partida_cache.get("fixture_id", 0)) != fixture_id:
+                continue
+
+            partida_api = partida_cache.get("partida")
+            if partida_api and partida_api.get("response"):
+                return partida_api
+
+        raise ValueError(f"Partida {fixture_id} nao encontrada no cache da rodada")
+
     def _converter_fixture_para_match(
         self,
         partida_api,
@@ -364,13 +452,17 @@ class MatchService():
         jogadores_partida = []
 
         for jogador in jogadores_escalados:
-            nome_normalizado = self._normalizar_nome(jogador.nome)
-            jogador_api = atuacoes_api.get(nome_normalizado)
+            jogador_api = atuacoes_api["por_api_id"].get(jogador.api_id)
 
             if jogador_api is None:
+                nome_normalizado = self._normalizar_nome(jogador.nome)
+                jogador_api = atuacoes_api["por_nome"].get(nome_normalizado)
+
+            if jogador_api is None:
+                nome_normalizado = self._normalizar_nome(jogador.nome)
                 jogador_api = self._buscar_atuacao_por_nome_aproximado(
                     nome_normalizado,
-                    atuacoes_api,
+                    atuacoes_api["por_nome"],
                 )
 
             jogadores_partida.append(
@@ -385,13 +477,21 @@ class MatchService():
         )
 
     def _indexar_atuacoes_api_football(self, estatisticas_api):
-        atuacoes = {}
+        atuacoes = {
+            "por_api_id": {},
+            "por_nome": {},
+        }
 
         for time in estatisticas_api.get("response", []):
             for jogador_api in time.get("players", []):
+                api_id = jogador_api.get("player", {}).get("id")
                 nome = jogador_api.get("player", {}).get("name")
+
+                if api_id is not None:
+                    atuacoes["por_api_id"][api_id] = jogador_api
+
                 if nome:
-                    atuacoes[self._normalizar_nome(nome)] = jogador_api
+                    atuacoes["por_nome"][self._normalizar_nome(nome)] = jogador_api
 
         return atuacoes
 

@@ -117,6 +117,12 @@ class ApiFootballClient:
             status=status,
         )
 
+    def buscar_partidas_por_ids(self, fixture_ids):
+        return self._get(
+            "/fixtures",
+            ids="-".join(str(fixture_id) for fixture_id in fixture_ids),
+        )
+
     def buscar_partida_por_id(self, fixture_id):
         return self._get("/fixtures", id=fixture_id)
 
@@ -125,4 +131,12 @@ class ApiFootballClient:
             "/fixtures/players",
             fixture=fixture_id,
             team=time_id,
+        )
+
+    def buscar_jogadores_liga_temporada(self, liga_id, temporada, pagina=1):
+        return self._get(
+            "/players",
+            league=liga_id,
+            season=temporada,
+            page=pagina,
         )
