@@ -11,6 +11,9 @@ class MarketController:
     def vender(self, username, jogador):
         return self.app_controller.vender_jogador(username, jogador)
 
+    def limpar_elenco_rodada(self, username):
+        return self.app_controller.limpar_elenco_rodada(username)
+
     def listar_elenco(self, username):
         return self.app_controller.listar_elenco(username)
 

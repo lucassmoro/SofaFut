@@ -167,7 +167,10 @@ class _MainWindow(QMainWindow):
         self.market_controller = market_controller
         self.jogadores_catalogo = []
         self.jogadores_disponiveis = []
+        self.jogadores_mercado = []
         self.jogadores_escalados = []
+        self.capitao = None
+        self.sort_directions = {}
 
         self.setWindowTitle("SofaFut")
         self.setMinimumSize(1100, 720)
@@ -187,6 +190,9 @@ class _MainWindow(QMainWindow):
         header.addWidget(title)
         header.addStretch(1)
         header.addWidget(QLabel(f"Usuario: {self.username}"))
+        logout_button = QPushButton("Logout")
+        logout_button.clicked.connect(self._logout)
+        header.addWidget(logout_button)
         layout.addLayout(header)
 
         self.tabs = QTabWidget()
@@ -198,6 +204,19 @@ class _MainWindow(QMainWindow):
 
         self.setCentralWidget(root)
         self.setStyleSheet(_STYLE)
+
+    def _logout(self):
+        self.auth_controller.logout()
+        self.login_window = _LoginWindow(
+            auth_controller=self.auth_controller,
+            player_catalog_controller=self.player_catalog_controller,
+            round_controller=self.round_controller,
+            lineup_controller=self.lineup_controller,
+            ranking_controller=self.ranking_controller,
+            market_controller=self.market_controller,
+        )
+        self.login_window.showMaximized()
+        self.close()
 
     def _build_round_tab(self):
         tab = QWidget()
@@ -216,8 +235,6 @@ class _MainWindow(QMainWindow):
         self.max_partidas_input.setMaximumWidth(70)
         carregar_button = QPushButton("Carregar rodada")
         carregar_button.clicked.connect(self._carregar_rodada)
-        cache_button = QPushButton("Usar cache")
-        cache_button.clicked.connect(self._listar_jogadores_cache)
 
         filters.addWidget(QLabel("Temporada"))
         filters.addWidget(self.temporada_combo)
@@ -226,14 +243,16 @@ class _MainWindow(QMainWindow):
         filters.addWidget(QLabel("Max. partidas"))
         filters.addWidget(self.max_partidas_input)
         filters.addWidget(carregar_button)
-        filters.addWidget(cache_button)
         filters.addStretch(1)
         layout.addLayout(filters)
 
         self.available_table = _table(["ID", "Jogador", "Time", "Pos", "Min", "Partida"])
+        self.available_table.horizontalHeader().sectionClicked.connect(
+            self._ordenar_jogadores_disponiveis
+        )
         layout.addWidget(self.available_table, 1)
-        add_button = QPushButton("Adicionar selecionados a escalacao")
-        add_button.clicked.connect(self._adicionar_selecionados)
+        add_button = QPushButton("Ir para mercado")
+        add_button.clicked.connect(lambda: self.tabs.setCurrentIndex(1))
         self.round_status = QLabel("")
         footer = QHBoxLayout()
         footer.addWidget(add_button)
@@ -247,8 +266,11 @@ class _MainWindow(QMainWindow):
         layout = QHBoxLayout(tab)
 
         catalog_col = QVBoxLayout()
-        catalog_col.addWidget(QLabel("Catalogo"))
+        catalog_col.addWidget(QLabel("Jogadores disponiveis na rodada"))
         self.market_catalog_table = _table(["ID", "Jogador", "Time", "Pos", "Valor"])
+        self.market_catalog_table.horizontalHeader().sectionClicked.connect(
+            self._ordenar_jogadores_mercado
+        )
         catalog_col.addWidget(self.market_catalog_table, 1)
         buy_button = QPushButton("Comprar selecionado")
         buy_button.clicked.connect(self._comprar_selecionado)
@@ -262,6 +284,9 @@ class _MainWindow(QMainWindow):
         sell_button = QPushButton("Vender selecionado")
         sell_button.clicked.connect(self._vender_selecionado)
         roster_col.addWidget(sell_button)
+        confirm_button = QPushButton("Confirmar elenco")
+        confirm_button.clicked.connect(self._confirmar_elenco)
+        roster_col.addWidget(confirm_button)
         self.transactions_text = QTextEdit()
         self.transactions_text.setReadOnly(True)
         self.transactions_text.setMaximumHeight(130)
@@ -314,7 +339,6 @@ class _MainWindow(QMainWindow):
         self.jogadores_catalogo = self.player_catalog_controller.carregar_jogadores_temporada(
             temporada=temporada
         )
-        self._preencher_tabela_players(self.market_catalog_table, self.jogadores_catalogo)
         self.round_status.setText(f"Catalogo carregado: {len(self.jogadores_catalogo)} jogadores")
 
     def _carregar_rodada(self):
@@ -329,12 +353,13 @@ class _MainWindow(QMainWindow):
             )
             total = len(dados.get("partidas_api", {}).get("response", []))
             cacheadas = len(dados.get("partidas", []))
-            self._listar_jogadores_cache()
+            self._listar_jogadores_rodada()
+            self._reiniciar_elenco_rodada()
             self.round_status.setText(f"Rodada {rodada}: {cacheadas}/{total} partidas com estatisticas")
         except Exception as exc:
             self._erro(str(exc))
 
-    def _listar_jogadores_cache(self):
+    def _listar_jogadores_rodada(self):
         try:
             temporada = int(self.temporada_combo.currentText())
             rodada = int(self.rodada_combo.currentText())
@@ -357,28 +382,11 @@ class _MainWindow(QMainWindow):
                 ],
             )
             self.round_status.setText(f"{len(self.jogadores_disponiveis)} atuacoes disponiveis")
+            self._preencher_catalogo_mercado()
         except Exception as exc:
             self._erro(str(exc))
 
-    def _adicionar_selecionados(self):
-        linhas = self._linhas_selecionadas(self.available_table)
-        selecionados = [self.jogadores_disponiveis[row] for row in linhas]
-        players = self.lineup_controller.selecionar_players_do_catalogo(selecionados)
-        existentes = {player.api_id for player in self.jogadores_escalados}
-
-        for player in players:
-            if len(self.jogadores_escalados) >= 11:
-                break
-            if player.api_id in existentes:
-                continue
-            self.jogadores_escalados.append(player)
-            existentes.add(player.api_id)
-
-        self._preencher_escalacao()
-        self.tabs.setCurrentIndex(2)
-
     def _preencher_escalacao(self):
-        capitao = self.jogadores_escalados[0] if self.jogadores_escalados else None
         _fill_table(
             self.lineup_table,
             [
@@ -387,7 +395,7 @@ class _MainWindow(QMainWindow):
                     jogador.nome or "",
                     jogador.nome_time or "",
                     jogador.posicao or "",
-                    "Sim" if jogador is capitao else "",
+                    "Sim" if jogador is self.capitao else "",
                 ]
                 for jogador in self.jogadores_escalados
             ],
@@ -398,27 +406,33 @@ class _MainWindow(QMainWindow):
         linhas = self._linhas_selecionadas(self.lineup_table)
         if not linhas:
             return
-        jogador = self.jogadores_escalados.pop(linhas[0])
-        self.jogadores_escalados.insert(0, jogador)
+        self.capitao = self.jogadores_escalados[linhas[0]]
         self._preencher_escalacao()
 
     def _remover_escalado(self):
         linhas = self._linhas_selecionadas(self.lineup_table)
         if not linhas:
             return
-        self.jogadores_escalados.pop(linhas[0])
-        self._preencher_escalacao()
+        try:
+            jogador = self.jogadores_escalados[linhas[0]]
+            self.market_controller.vender(self.username, jogador)
+            self._atualizar_mercado()
+        except Exception as exc:
+            self._erro(str(exc))
 
     def _calcular_pontuacao(self):
         try:
             if len(self.jogadores_escalados) != 11:
-                raise RuntimeError("A escalacao precisa ter 11 jogadores.")
+                raise RuntimeError("Voce precisa comprar exatamente 11 jogadores para a rodada.")
+
+            if self.capitao is None:
+                raise RuntimeError("Escolha um capitao antes de calcular a pontuacao.")
 
             temporada = int(self.temporada_combo.currentText())
             rodada = int(self.rodada_combo.currentText())
             jogadores_fantasy = self.lineup_controller.criar_escalacao_fantasy(
                 self.jogadores_escalados,
-                capitao=self.jogadores_escalados[0],
+                capitao=self.capitao,
             )
             rodada_model = self.round_controller.montar_rodada_por_cache(
                 temporada=temporada,
@@ -458,7 +472,7 @@ class _MainWindow(QMainWindow):
         if not linhas:
             return
         try:
-            self.market_controller.comprar(self.username, self.jogadores_catalogo[linhas[0]])
+            self.market_controller.comprar(self.username, self.jogadores_mercado[linhas[0]])
             self._atualizar_mercado()
         except Exception as exc:
             self._erro(str(exc))
@@ -474,8 +488,21 @@ class _MainWindow(QMainWindow):
         except Exception as exc:
             self._erro(str(exc))
 
+    def _confirmar_elenco(self):
+        if len(self.jogadores_escalados) != 11:
+            self._erro("Compre exatamente 11 jogadores antes de confirmar.")
+            return
+
+        self.tabs.setCurrentIndex(2)
+        self.lineup_status.setText("11/11 jogadores. Escolha o capitao e calcule a pontuacao.")
+
     def _atualizar_mercado(self):
         elenco = self.market_controller.listar_elenco(self.username)
+        self.jogadores_escalados = list(elenco)
+        if self.capitao not in self.jogadores_escalados:
+            self.capitao = None
+
+        self._preencher_catalogo_mercado()
         self._preencher_tabela_players(self.market_roster_table, elenco)
         self.market_status.setText(
             f"Patrimonio: {self.market_controller.patrimonio(self.username):.2f} | "
@@ -492,6 +519,75 @@ class _MainWindow(QMainWindow):
                 ]
             )
         )
+        self._preencher_escalacao()
+
+    def _preencher_catalogo_mercado(self):
+        jogadores_rodada = self.lineup_controller.selecionar_players_do_catalogo(
+            self.jogadores_disponiveis
+        )
+        api_ids_elenco = {
+            jogador.api_id
+            for jogador in self.market_controller.listar_elenco(self.username)
+        }
+        self.jogadores_mercado = [
+            jogador for jogador in jogadores_rodada if jogador.api_id not in api_ids_elenco
+        ]
+        self._preencher_tabela_players(self.market_catalog_table, self.jogadores_mercado)
+
+    def _ordenar_jogadores_disponiveis(self, section):
+        coluna = ["api_id", "nome", "time", "posicao", "minutos", "partida"][section]
+        reverse = self._proxima_direcao_ordenacao(f"disponiveis:{coluna}")
+        self.jogadores_disponiveis.sort(
+            key=lambda jogador: self._valor_ordenacao(jogador.get(coluna)),
+            reverse=reverse,
+        )
+        _fill_table(
+            self.available_table,
+            [
+                [
+                    item.get("api_id") or "",
+                    item.get("nome") or "",
+                    item.get("time") or "",
+                    item.get("posicao") or "",
+                    item.get("minutos") or 0,
+                    item.get("partida") or "",
+                ]
+                for item in self.jogadores_disponiveis
+            ],
+        )
+        self._preencher_catalogo_mercado()
+
+    def _ordenar_jogadores_mercado(self, section):
+        atributo = ["api_id", "nome", "nome_time", "posicao", "valor_mercado"][section]
+        reverse = self._proxima_direcao_ordenacao(f"mercado:{atributo}")
+        self.jogadores_mercado.sort(
+            key=lambda jogador: self._valor_ordenacao(getattr(jogador, atributo, None)),
+            reverse=reverse,
+        )
+        self._preencher_tabela_players(self.market_catalog_table, self.jogadores_mercado)
+
+    def _proxima_direcao_ordenacao(self, chave):
+        reverse = not self.sort_directions.get(chave, False)
+        self.sort_directions[chave] = reverse
+        return reverse
+
+    def _valor_ordenacao(self, valor):
+        if valor is None:
+            return (1, "")
+
+        if isinstance(valor, (int, float)):
+            return (0, valor)
+
+        try:
+            return (0, float(valor))
+        except (TypeError, ValueError):
+            return (0, str(valor).casefold())
+
+    def _reiniciar_elenco_rodada(self):
+        self.capitao = None
+        self.jogadores_escalados = []
+        self.market_controller.limpar_elenco_rodada(self.username)
+        self._atualizar_mercado()
 
     def _atualizar_ranking(self):
         self.ranking_text.setPlainText(self.ranking_controller.formatar_ranking_usuarios())

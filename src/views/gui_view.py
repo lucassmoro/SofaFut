@@ -22,8 +22,11 @@ class SofaFutGui:
         self.username = None
         self.jogadores_catalogo = []
         self.jogadores_disponiveis = []
+        self.jogadores_mercado = []
         self.jogadores_escalados = []
         self.jogadores_fantasy = []
+        self.capitao = None
+        self.sort_directions = {}
 
         self.root = tk.Tk()
         self.root.title("SofaFut")
@@ -115,6 +118,7 @@ class SofaFutGui:
         header = ttk.Frame(self.container)
         header.pack(fill=tk.X, pady=(0, 12))
         ttk.Label(header, text="SofaFut", style="Title.TLabel").pack(side=tk.LEFT)
+        ttk.Button(header, text="Logout", command=self._logout).pack(side=tk.RIGHT, padx=(8, 0))
         ttk.Label(header, text=f"Usuário: {self.username}", style="Subtitle.TLabel").pack(side=tk.RIGHT)
 
         self.tabs = ttk.Notebook(self.container)
@@ -127,6 +131,17 @@ class SofaFutGui:
         self._carregar_catalogo()
         self._atualizar_ranking()
         self._atualizar_mercado()
+
+    def _logout(self):
+        self.auth_controller.logout()
+        self.username = None
+        self.jogadores_catalogo = []
+        self.jogadores_disponiveis = []
+        self.jogadores_mercado = []
+        self.jogadores_escalados = []
+        self.jogadores_fantasy = []
+        self.capitao = None
+        self._montar_tela_login()
 
     def _montar_aba_rodada(self):
         tab = ttk.Frame(self.tabs, padding=12)
@@ -162,10 +177,9 @@ class SofaFutGui:
         ttk.Entry(filters, textvariable=self.max_partidas_var, width=6).pack(side=tk.LEFT, padx=(0, 14))
 
         ttk.Button(filters, text="Carregar Rodada", command=self._carregar_rodada).pack(side=tk.LEFT)
-        ttk.Button(filters, text="Usar Cache", command=self._listar_jogadores_cache).pack(side=tk.LEFT, padx=8)
 
         columns = ("api_id", "nome", "time", "posicao", "minutos", "partida")
-        self.available_tree = ttk.Treeview(tab, columns=columns, show="headings", selectmode="extended")
+        self.available_tree = ttk.Treeview(tab, columns=columns, show="headings", selectmode="browse")
         for column, label, width in (
             ("api_id", "ID", 72),
             ("nome", "Jogador", 190),
@@ -174,13 +188,17 @@ class SofaFutGui:
             ("minutos", "Min", 60),
             ("partida", "Partida", 250),
         ):
-            self.available_tree.heading(column, text=label)
+            self.available_tree.heading(
+                column,
+                text=label,
+                command=lambda coluna=column: self._ordenar_jogadores_disponiveis(coluna),
+            )
             self.available_tree.column(column, width=width, anchor=tk.W)
         self.available_tree.pack(fill=tk.BOTH, expand=True)
 
         footer = ttk.Frame(tab)
         footer.pack(fill=tk.X, pady=(10, 0))
-        ttk.Button(footer, text="Adicionar Selecionados à Escalação", command=self._adicionar_selecionados).pack(side=tk.LEFT)
+        ttk.Button(footer, text="Ir para Mercado", command=lambda: self.tabs.select(1)).pack(side=tk.LEFT)
         self.round_status_label = ttk.Label(footer, text="", style="Subtitle.TLabel")
         self.round_status_label.pack(side=tk.LEFT, padx=12)
 
@@ -230,7 +248,7 @@ class SofaFutGui:
         panes.add(catalog_frame, weight=3)
         panes.add(elenco_frame, weight=2)
 
-        ttk.Label(catalog_frame, text="Catálogo", style="Subtitle.TLabel").pack(anchor=tk.W, pady=(0, 6))
+        ttk.Label(catalog_frame, text="Jogadores disponíveis na rodada", style="Subtitle.TLabel").pack(anchor=tk.W, pady=(0, 6))
         market_columns = ("api_id", "nome", "time", "posicao", "valor")
         self.market_catalog_tree = ttk.Treeview(
             catalog_frame,
@@ -245,7 +263,11 @@ class SofaFutGui:
             ("posicao", "Pos", 60),
             ("valor", "Valor", 80),
         ):
-            self.market_catalog_tree.heading(column, text=label)
+            self.market_catalog_tree.heading(
+                column,
+                text=label,
+                command=lambda coluna=column: self._ordenar_jogadores_mercado(coluna),
+            )
             self.market_catalog_tree.column(column, width=width, anchor=tk.W)
         self.market_catalog_tree.pack(fill=tk.BOTH, expand=True)
         ttk.Button(catalog_frame, text="Comprar Selecionado", command=self._comprar_selecionado).pack(
@@ -274,6 +296,10 @@ class SofaFutGui:
             anchor=tk.W,
             pady=(10, 0),
         )
+        ttk.Button(elenco_frame, text="Confirmar Elenco", command=self._confirmar_elenco).pack(
+            anchor=tk.W,
+            pady=(8, 0),
+        )
 
         self.transactions_text = tk.Text(elenco_frame, height=6, wrap=tk.WORD)
         self.transactions_text.pack(fill=tk.X, pady=(10, 0))
@@ -290,7 +316,6 @@ class SofaFutGui:
         jogadores = self.player_catalog_controller.carregar_jogadores_temporada(temporada=temporada)
         self.jogadores_catalogo = jogadores
         self.round_status_label.configure(text=f"Catálogo carregado: {len(jogadores)} jogadores")
-        self._preencher_catalogo_mercado()
 
     def _carregar_rodada(self):
         try:
@@ -304,12 +329,13 @@ class SofaFutGui:
             )
             total = len(dados.get("partidas_api", {}).get("response", []))
             cacheadas = len(dados.get("partidas", []))
-            self._listar_jogadores_cache()
+            self._listar_jogadores_rodada()
+            self._reiniciar_elenco_rodada()
             self.round_status_label.configure(text=f"Rodada {rodada}: {cacheadas}/{total} partidas com estatísticas")
         except Exception as exc:
             self._mostrar_erro(str(exc))
 
-    def _listar_jogadores_cache(self):
+    def _listar_jogadores_rodada(self):
         try:
             temporada = int(self.temporada_var.get())
             rodada = int(self.rodada_var.get())
@@ -318,6 +344,7 @@ class SofaFutGui:
                 numero_rodada=rodada,
             )
             self._preencher_disponiveis()
+            self._preencher_catalogo_mercado()
             self.round_status_label.configure(text=f"{len(self.jogadores_disponiveis)} atuações disponíveis")
         except Exception as exc:
             self._mostrar_erro(str(exc))
@@ -339,31 +366,8 @@ class SofaFutGui:
                 ),
             )
 
-    def _adicionar_selecionados(self):
-        selecionados = [
-            self.jogadores_disponiveis[int(item_id)]
-            for item_id in self.available_tree.selection()
-        ]
-        players = self.lineup_controller.selecionar_players_do_catalogo(selecionados)
-        existentes = {player.api_id for player in self.jogadores_escalados}
-
-        for player in players:
-            if len(self.jogadores_escalados) >= 11:
-                break
-            if player.api_id in existentes:
-                continue
-            self.jogadores_escalados.append(player)
-            existentes.add(player.api_id)
-
-        if len(players) < len(selecionados):
-            self._mostrar_erro("Alguns jogadores selecionados não existem no catálogo fixo.")
-
-        self._preencher_escalacao()
-        self.tabs.select(1)
-
     def _preencher_escalacao(self):
         self.lineup_tree.delete(*self.lineup_tree.get_children())
-        capitao = self.jogadores_escalados[0] if self.jogadores_escalados else None
 
         for index, jogador in enumerate(self.jogadores_escalados):
             self.lineup_tree.insert(
@@ -375,7 +379,7 @@ class SofaFutGui:
                     jogador.nome or "",
                     jogador.nome_time or "",
                     jogador.posicao or "",
-                    "Sim" if jogador is capitao else "",
+                    "Sim" if jogador is self.capitao else "",
                 ),
             )
 
@@ -386,27 +390,38 @@ class SofaFutGui:
         if not selection:
             return
         index = int(selection[0])
-        jogador = self.jogadores_escalados.pop(index)
-        self.jogadores_escalados.insert(0, jogador)
+        self.capitao = self.jogadores_escalados[index]
         self._preencher_escalacao()
 
     def _remover_escalado(self):
         selection = self.lineup_tree.selection()
         if not selection:
             return
-        self.jogadores_escalados.pop(int(selection[0]))
+        jogador = self.jogadores_escalados[int(selection[0])]
+
+        if self.market_controller is not None:
+            self.market_controller.vender(self.username, jogador)
+            self._atualizar_mercado()
+            return
+
+        self.jogadores_escalados.remove(jogador)
+        if jogador is self.capitao:
+            self.capitao = None
         self._preencher_escalacao()
 
     def _calcular_pontuacao(self):
         try:
             if len(self.jogadores_escalados) != 11:
-                raise RuntimeError("A escalação precisa ter 11 jogadores.")
+                raise RuntimeError("Voce precisa comprar exatamente 11 jogadores para a rodada.")
+
+            if self.capitao is None:
+                raise RuntimeError("Escolha um capitao antes de calcular a pontuacao.")
 
             temporada = int(self.temporada_var.get())
             rodada = int(self.rodada_var.get())
             jogadores_fantasy = self.lineup_controller.criar_escalacao_fantasy(
                 self.jogadores_escalados,
-                capitao=self.jogadores_escalados[0],
+                capitao=self.capitao,
             )
             rodada_model = self.round_controller.montar_rodada_por_cache(
                 temporada=temporada,
@@ -450,12 +465,23 @@ class SofaFutGui:
         self._preencher_catalogo_mercado()
         self._preencher_elenco_mercado()
 
-    def _preencher_catalogo_mercado(self):
+    def _preencher_catalogo_mercado(self, ordenar=True):
         if not hasattr(self, "market_catalog_tree"):
             return
 
         self.market_catalog_tree.delete(*self.market_catalog_tree.get_children())
-        for index, jogador in enumerate(self.jogadores_catalogo):
+        if ordenar:
+            jogadores_rodada = self.lineup_controller.selecionar_players_do_catalogo(
+                self.jogadores_disponiveis
+            )
+            api_ids_elenco = {
+                jogador.api_id
+                for jogador in self.market_controller.listar_elenco(self.username)
+            }
+            self.jogadores_mercado = [
+                jogador for jogador in jogadores_rodada if jogador.api_id not in api_ids_elenco
+            ]
+        for index, jogador in enumerate(self.jogadores_mercado):
             self.market_catalog_tree.insert(
                 "",
                 tk.END,
@@ -463,12 +489,64 @@ class SofaFutGui:
                 values=self._valores_jogador_mercado(jogador),
             )
 
+    def _ordenar_jogadores_disponiveis(self, coluna):
+        reverse = self._proxima_direcao_ordenacao(f"disponiveis:{coluna}")
+        self.jogadores_disponiveis.sort(
+            key=lambda jogador: self._valor_ordenacao_dict(jogador, coluna),
+            reverse=reverse,
+        )
+        self._preencher_disponiveis()
+        self._preencher_catalogo_mercado()
+
+    def _ordenar_jogadores_mercado(self, coluna):
+        reverse = self._proxima_direcao_ordenacao(f"mercado:{coluna}")
+        criterio = {
+            "api_id": "api_id",
+            "nome": "nome",
+            "time": "nome_time",
+            "posicao": "posicao",
+            "valor": "valor_mercado",
+        }.get(coluna, coluna)
+        self.jogadores_mercado.sort(
+            key=lambda jogador: self._valor_ordenacao_obj(jogador, criterio),
+            reverse=reverse,
+        )
+        self._preencher_catalogo_mercado(ordenar=False)
+
+    def _proxima_direcao_ordenacao(self, chave):
+        reverse = not self.sort_directions.get(chave, False)
+        self.sort_directions[chave] = reverse
+        return reverse
+
+    def _valor_ordenacao_dict(self, item, coluna):
+        valor = item.get(coluna)
+        return self._valor_ordenacao(valor)
+
+    def _valor_ordenacao_obj(self, item, atributo):
+        return self._valor_ordenacao(getattr(item, atributo, None))
+
+    def _valor_ordenacao(self, valor):
+        if valor is None:
+            return (1, "")
+
+        if isinstance(valor, (int, float)):
+            return (0, valor)
+
+        try:
+            return (0, float(valor))
+        except (TypeError, ValueError):
+            return (0, str(valor).casefold())
+
     def _preencher_elenco_mercado(self):
         if self.market_controller is None or not hasattr(self, "market_roster_tree"):
             return
 
         self.market_roster_tree.delete(*self.market_roster_tree.get_children())
         elenco = self.market_controller.listar_elenco(self.username)
+        self.jogadores_escalados = list(elenco)
+        if self.capitao not in self.jogadores_escalados:
+            self.capitao = None
+
         for index, jogador in enumerate(elenco):
             self.market_roster_tree.insert(
                 "",
@@ -482,6 +560,7 @@ class SofaFutGui:
             text=f"Patrimônio: {patrimonio:.2f} | Elenco: {len(elenco)} jogadores"
         )
         self._preencher_transacoes()
+        self._preencher_escalacao()
 
     def _preencher_transacoes(self):
         self.transactions_text.delete("1.0", tk.END)
@@ -504,7 +583,7 @@ class SofaFutGui:
             return
 
         try:
-            jogador = self.jogadores_catalogo[int(selection[0])]
+            jogador = self.jogadores_mercado[int(selection[0])]
             self.market_controller.comprar(self.username, jogador)
             self._atualizar_mercado()
         except Exception as exc:
@@ -525,6 +604,26 @@ class SofaFutGui:
             self._atualizar_mercado()
         except Exception as exc:
             self._mostrar_erro(str(exc))
+
+    def _confirmar_elenco(self):
+        if len(self.jogadores_escalados) != 11:
+            self._mostrar_erro("Compre exatamente 11 jogadores antes de confirmar.")
+            return
+
+        self.tabs.select(2)
+        self.lineup_status_label.configure(
+            text="11/11 jogadores. Escolha o capitão e calcule a pontuação."
+        )
+
+    def _reiniciar_elenco_rodada(self):
+        self.jogadores_escalados = []
+        self.capitao = None
+
+        if self.market_controller is not None and self.username is not None:
+            self.market_controller.limpar_elenco_rodada(self.username)
+
+        self._atualizar_mercado()
+        self._preencher_escalacao()
 
     def _valores_jogador_mercado(self, jogador):
         return (

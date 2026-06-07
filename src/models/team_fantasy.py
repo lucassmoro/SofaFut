@@ -2,7 +2,7 @@ from src.models.lineup import Lineup
 
 class TeamFantasy():
 
-    def __init__(self, nome, patrimonio=100.0):
+    def __init__(self, nome, patrimonio=110.0):
 
         self.__nome = nome
         self.__escalacoes : dict[int, Lineup] = {}

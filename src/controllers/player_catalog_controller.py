@@ -24,6 +24,9 @@ class PlayerCatalogController:
     def listar_jogadores(self):
         return self.app_controller.listar_jogadores()
 
+    def listar_jogadores_ordenados(self, criterio, reverse=True):
+        return self.app_controller.listar_jogadores(criterio=criterio, reverse=reverse)
+
     def buscar_por_nome(self, nome):
         nome_normalizado = self._normalizar_nome(nome)
 

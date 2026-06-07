@@ -13,6 +13,9 @@ class MarketService:
         self._validar_mercado_aberto()
         team = user.team_fantasy
 
+        if len(team.elenco) >= 11:
+            raise ValueError("O elenco da rodada ja possui 11 jogadores.")
+
         if self._buscar_no_elenco(team.elenco, jogador) is not None:
             raise ValueError("Jogador ja esta no elenco.")
 
@@ -29,6 +32,13 @@ class MarketService:
                 valor=valor,
             )
         )
+        return team
+
+    def limpar_elenco_rodada(self, user: User):
+        team = user.team_fantasy
+        team.elenco = []
+        team.transacoes = []
+        team.patrimonio = 110.0
         return team
 
     def vender(self, user: User, jogador: Player):

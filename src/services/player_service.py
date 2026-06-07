@@ -13,11 +13,16 @@ class PlayerService:
     def __init__(self, player_repository: PlayerRepository):
         self.player_repository = player_repository
 
-    def listar_jogadores_ordenados(self, criterio: Estatisticas) -> list[Player]:
-        jogadores = self.player_repository.listar_jogadores()
+    def listar_jogadores_ordenados(
+        self,
+        criterio: Estatisticas | str,
+        reverse=True,
+    ) -> list[Player]:
+        jogadores = self.player_repository.listar_jogadores().copy()
+        atributo = self._normalizar_criterio_ordenacao(criterio)
         jogadores.sort(
-            key=lambda jogador: getattr(jogador, criterio.value),
-            reverse=True,
+            key=lambda jogador: self._valor_ordenacao(jogador, atributo),
+            reverse=reverse,
         )
         return jogadores
 
@@ -89,3 +94,32 @@ class PlayerService:
         if not estatisticas:
             return {}
         return estatisticas[0]
+
+    def _normalizar_criterio_ordenacao(self, criterio):
+        if isinstance(criterio, Estatisticas):
+            criterio = criterio.value
+
+        criterio = str(criterio or "").casefold().strip().replace(" ", "_")
+        aliases = {
+            "id": "api_id",
+            "time": "nome_time",
+            "clube": "nome_time",
+            "valor": "valor_mercado",
+            "preco": "valor_mercado",
+            "preço": "valor_mercado",
+        }
+        return aliases.get(criterio, criterio)
+
+    def _valor_ordenacao(self, jogador, atributo):
+        valor = getattr(jogador, atributo, None)
+
+        if valor is None:
+            return (1, "")
+
+        if isinstance(valor, (int, float)):
+            return (0, valor)
+
+        try:
+            return (0, float(valor))
+        except (TypeError, ValueError):
+            return (0, str(valor).casefold())

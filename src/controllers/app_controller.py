@@ -77,14 +77,19 @@ class AppController:
     def alterar_senha(self, username: str, senha_atual: str, nova_senha: str):
         return self.user_service.alterar_senha(username, senha_atual, nova_senha)
 
-    def listar_jogadores(self, criterio: Estatisticas | str | None = None):
+    def listar_jogadores(
+        self,
+        criterio: Estatisticas | str | None = None,
+        reverse=True,
+    ):
         if criterio is None:
             return self.player_repository.listar_jogadores()
 
         if isinstance(criterio, str):
-            criterio = Estatisticas[criterio.upper()]
+            nome_enum = criterio.upper()
+            criterio = Estatisticas[nome_enum] if nome_enum in Estatisticas.__members__ else criterio
 
-        return self.player_service.listar_jogadores_ordenados(criterio)
+        return self.player_service.listar_jogadores_ordenados(criterio, reverse=reverse)
 
     def carregar_jogadores_brasileirao_temporada(
         self,
@@ -314,6 +319,10 @@ class AppController:
     def vender_jogador(self, username: str, jogador):
         user = self._buscar_usuario_autorizado(username)
         return self.market_service.vender(user, jogador)
+
+    def limpar_elenco_rodada(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return self.market_service.limpar_elenco_rodada(user)
 
     def listar_elenco(self, username: str):
         user = self._buscar_usuario_autorizado(username)
