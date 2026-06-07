@@ -56,5 +56,13 @@ class LineupController:
             jogadores=jogadores_fantasy,
         )
 
+    def buscar_escalacao(self, numero_rodada):
+        usuario = self.app_controller.usuario_logado()
+
+        if usuario is None:
+            return None
+
+        return usuario.team_fantasy.escalacoes.get(numero_rodada)
+
     def _normalizar(self, valor):
         return (valor or "").casefold().strip()

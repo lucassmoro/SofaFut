@@ -474,6 +474,9 @@ class MatchService():
                     atuacoes_api["por_nome"],
                 )
 
+            if jogador_api is None:
+                continue
+
             jogadores_partida.append(
                 self._converter_atuacao_api_football(jogador, jogador_api)
             )

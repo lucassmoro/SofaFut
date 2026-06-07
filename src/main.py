@@ -1,4 +1,5 @@
 import os
+import tkinter as tk
 
 from src.controllers import AppController
 from src.controllers import AuthController
@@ -7,22 +8,59 @@ from src.controllers import PlayerCatalogController
 from src.controllers import RankingController
 from src.controllers import RoundController
 from src.views import ConsoleView
+from src.views import SofaFutGui
 
 
 def main():
-    view = ConsoleView()
-
-    if not os.getenv("API_FOOTBALL_KEY"):
-        view.mostrar_erro("Configure API_FOOTBALL_KEY antes de testar.")
-        print('export API_FOOTBALL_KEY="sua_chave_aqui"')
-        return
-
     app_controller = AppController()
     auth_controller = AuthController(app_controller)
     player_catalog_controller = PlayerCatalogController(app_controller)
     round_controller = RoundController(app_controller)
     lineup_controller = LineupController(app_controller)
     ranking_controller = RankingController(app_controller)
+
+    if os.getenv("SOFAFUT_VIEW") == "console":
+        executar_console(
+            auth_controller,
+            player_catalog_controller,
+            round_controller,
+            lineup_controller,
+            ranking_controller,
+        )
+        return
+
+    try:
+        app = SofaFutGui(
+            auth_controller=auth_controller,
+            player_catalog_controller=player_catalog_controller,
+            round_controller=round_controller,
+            lineup_controller=lineup_controller,
+            ranking_controller=ranking_controller,
+        )
+        app.run()
+    except tk.TclError as erro:
+        print(f"Nao foi possivel abrir interface grafica: {erro}")
+        print("Rodando fluxo de console. Para forcar console: SOFAFUT_VIEW=console")
+        executar_console(
+            auth_controller,
+            player_catalog_controller,
+            round_controller,
+            lineup_controller,
+            ranking_controller,
+        )
+
+
+def executar_console(
+    auth_controller,
+    player_catalog_controller,
+    round_controller,
+    lineup_controller,
+    ranking_controller,
+):
+    view = ConsoleView()
+
+    if not os.getenv("API_FOOTBALL_KEY"):
+        print("Aviso: API_FOOTBALL_KEY ausente. O console só funcionará com caches já existentes.")
 
     try:
         testar_fluxo_console(
@@ -114,11 +152,13 @@ def testar_fluxo_console(
         numero_rodada=numero_rodada,
         jogadores_fantasy=jogadores_fantasy,
     )
+    escalacao = lineup_controller.buscar_escalacao(numero_rodada)
+    jogadores_calculados = escalacao.jogadores if escalacao is not None else jogadores_fantasy
 
     view.mostrar_pontuacao(
         numero_rodada,
         pontuacao_total,
-        jogadores_fantasy,
+        jogadores_calculados,
     )
     view.mostrar_ranking(ranking_controller.formatar_ranking_usuarios())
 
