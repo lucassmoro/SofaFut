@@ -412,8 +412,17 @@ class MatchService():
         return self.CACHE_DIR / f"fixture_{fixture_id}.json"
 
     def _caminho_cache_rodada(self, liga_id, temporada, rodada):
-        rodada_normalizada = self._normalizar_nome(rodada).replace(" ", "_")
-        return self.CACHE_DIR / f"round_{liga_id}_{temporada}_{rodada_normalizada}.json"
+        numero_rodada = self._numero_rodada(rodada)
+        return self.CACHE_DIR / f"brasileirao_round_{numero_rodada}.json"
+
+    def _numero_rodada(self, rodada):
+        if isinstance(rodada, int):
+            return rodada
+
+        try:
+            return int(str(rodada).rsplit("-", 1)[1].strip())
+        except (IndexError, ValueError):
+            raise ValueError(f"Nome de rodada invalido: {rodada}")
 
     def _buscar_partida_cache_rodada(self, dados_rodada, fixture_id):
         fixture_id = int(fixture_id)

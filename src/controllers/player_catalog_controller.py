@@ -24,13 +24,6 @@ class PlayerCatalogController:
     def listar_jogadores(self):
         return self.app_controller.listar_jogadores()
 
-    def adicionar_jogadores_descobertos_na_rodada(self, liga_id, temporada, dados_rodada):
-        return self.app_controller.adicionar_jogadores_descobertos_na_rodada(
-            liga_id=liga_id,
-            temporada=temporada,
-            dados_rodada=dados_rodada,
-        )
-
     def buscar_por_nome(self, nome):
         nome_normalizado = self._normalizar_nome(nome)
 

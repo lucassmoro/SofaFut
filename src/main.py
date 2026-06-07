@@ -47,13 +47,8 @@ def testar_fluxo_console(
 ):
     liga_id = _env_int("API_FOOTBALL_LEAGUE_ID", padrao=71)
     temporada = _env_int("API_FOOTBALL_SEASON", padrao=2024)
-    numero_rodada = _env_int("SOFAFUT_ROUND_NUMBER", padrao=1)
+    numero_rodada = _env_int("SOFAFUT_ROUND_NUMBER", padrao=2)
     max_partidas = _env_int("API_FOOTBALL_MAX_FIXTURES", padrao=2)
-    max_paginas_jogadores = _env_int("API_FOOTBALL_MAX_PLAYER_PAGES", padrao=3)
-    paginas_jogadores_por_execucao = _env_int(
-        "API_FOOTBALL_PLAYER_PAGES_PER_RUN",
-        padrao=1,
-    )
 
     username = "lucas"
     senha = "senha"
@@ -72,8 +67,6 @@ def testar_fluxo_console(
     jogadores_temporada = player_catalog_controller.carregar_jogadores_temporada(
         liga_id=liga_id,
         temporada=temporada,
-        max_paginas=max_paginas_jogadores,
-        paginas_por_execucao=paginas_jogadores_por_execucao,
     )
     view.mostrar_catalogo_jogadores(jogadores_temporada)
 
@@ -85,14 +78,6 @@ def testar_fluxo_console(
         max_partidas=max_partidas,
     )
     view.mostrar_resumo_cache_rodada(dados_rodada)
-    novos_jogadores = player_catalog_controller.adicionar_jogadores_descobertos_na_rodada(
-        liga_id=liga_id,
-        temporada=temporada,
-        dados_rodada=dados_rodada,
-    )
-
-    if novos_jogadores:
-        print(f"\nCatalogo atualizado com {novos_jogadores} jogadores da rodada.")
 
     jogadores_disponiveis = round_controller.listar_jogadores_disponiveis(
         liga_id=liga_id,
@@ -111,7 +96,7 @@ def testar_fluxo_console(
     if len(jogadores) < 11:
         raise RuntimeError(
             "Catalogo de jogadores ainda nao contem os 11 jogadores escolhidos. "
-            "Baixe mais paginas ou cacheie a rodada para adicionar esses jogadores ao catalogo."
+            "Atualize manualmente o arquivo data/api_football/players_available.json."
         )
 
     jogadores_fantasy = lineup_controller.criar_escalacao_fantasy(jogadores)

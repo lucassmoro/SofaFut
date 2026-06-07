@@ -34,10 +34,7 @@ class AppController:
         self.auth_service = AuthService(self.user_database, self.session)
         self.user_service = UserService(self.user_database, self.session)
         self.team_fantasy_service = TeamFantasyService()
-        self.player_service = PlayerService(
-            self.player_repository,
-            api_football=self.api_football,
-        )
+        self.player_service = PlayerService(self.player_repository)
         self.match_service = MatchService(
             sofa_api=sofa_api or SofaScoreApiClient(),
             api_football=self.api_football,
@@ -107,13 +104,6 @@ class AppController:
         return self.player_service.carregar_jogadores_temporada_cache(
             liga_id=liga_id,
             temporada=temporada,
-        )
-
-    def adicionar_jogadores_descobertos_na_rodada(self, liga_id, temporada, dados_rodada):
-        return self.player_service.adicionar_jogadores_descobertos_na_rodada(
-            liga_id=liga_id,
-            temporada=temporada,
-            dados_rodada=dados_rodada,
         )
 
     def montar_escalacao(
