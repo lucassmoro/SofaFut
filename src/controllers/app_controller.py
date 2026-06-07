@@ -1,4 +1,5 @@
 from src.external.api_client import SofaScoreApiClient
+from src.external.api_football_client import ApiFootballClient
 from src.models.estatistics import Estatisticas
 from src.models.player_fantasy import PlayerFantasy
 from src.repositories.players_repository import PlayerRepository
@@ -21,6 +22,7 @@ class AppController:
         player_repository: PlayerRepository | None = None,
         round_repository: RoundRepository | None = None,
         sofa_api: SofaScoreApiClient | None = None,
+        api_football: ApiFootballClient | None = None,
         session: Session | None = None,
     ):
         self.session = session or Session()
@@ -32,7 +34,10 @@ class AppController:
         self.user_service = UserService(self.user_database, self.session)
         self.team_fantasy_service = TeamFantasyService()
         self.player_service = PlayerService(self.player_repository)
-        self.match_service = MatchService(sofa_api or SofaScoreApiClient())
+        self.match_service = MatchService(
+            sofa_api=sofa_api or SofaScoreApiClient(),
+            api_football=api_football,
+        )
 
     def cadastrar_usuario(
         self,
@@ -111,6 +116,154 @@ class AppController:
 
     def buscar_partida(self, event_id: int):
         return self.match_service.get_match_info(event_id)
+
+    def buscar_partidas_por_data(
+        self,
+        data,
+        liga_id=None,
+        temporada=None,
+        time_id=None,
+        status=None,
+    ):
+        return self.match_service.buscar_partidas_por_data(
+            data=data,
+            liga_id=liga_id,
+            temporada=temporada,
+            time_id=time_id,
+            status=status,
+        )
+
+    def buscar_partidas_por_periodo(
+        self,
+        data_inicio,
+        data_fim,
+        liga_id=None,
+        temporada=None,
+        time_id=None,
+        status=None,
+    ):
+        return self.match_service.buscar_partidas_por_periodo(
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            liga_id=liga_id,
+            temporada=temporada,
+            time_id=time_id,
+            status=status,
+        )
+
+    def buscar_partida_api_football(self, fixture_id):
+        return self.match_service.buscar_partida_por_id(fixture_id)
+
+    def buscar_estatisticas_jogadores_partida(self, fixture_id, time_id=None):
+        return self.match_service.buscar_estatisticas_jogadores_partida(
+            fixture_id=fixture_id,
+            time_id=time_id,
+        )
+
+    def buscar_partidas_por_rodada_api_football(
+        self,
+        liga_id,
+        temporada,
+        rodada,
+        status=None,
+    ):
+        return self.match_service.buscar_partidas_por_rodada_api_football(
+            liga_id=liga_id,
+            temporada=temporada,
+            rodada=rodada,
+            status=status,
+        )
+
+    def montar_rodada_por_fixture_api_football(
+        self,
+        fixture_id,
+        numero_rodada,
+        jogadores_escalados,
+    ):
+        return self.match_service.montar_rodada_por_fixture_api_football(
+            fixture_id=fixture_id,
+            numero_rodada=numero_rodada,
+            jogadores_escalados=jogadores_escalados,
+        )
+
+    def baixar_dados_partida_api_football(self, fixture_id, usar_cache=True):
+        return self.match_service.baixar_dados_partida_api_football(
+            fixture_id=fixture_id,
+            usar_cache=usar_cache,
+        )
+
+    def carregar_dados_partida_api_football(self, fixture_id):
+        return self.match_service.carregar_dados_partida_api_football(fixture_id)
+
+    def listar_jogadores_disponiveis_cache_api_football(self, fixture_id):
+        return self.match_service.listar_jogadores_disponiveis_cache_api_football(
+            fixture_id
+        )
+
+    def montar_rodada_por_cache_api_football(
+        self,
+        fixture_id,
+        numero_rodada,
+        jogadores_escalados,
+    ):
+        return self.match_service.montar_rodada_por_cache_api_football(
+            fixture_id=fixture_id,
+            numero_rodada=numero_rodada,
+            jogadores_escalados=jogadores_escalados,
+        )
+
+    def baixar_dados_rodada_api_football(
+        self,
+        liga_id,
+        temporada,
+        rodada,
+        status=None,
+        usar_cache=True,
+        max_partidas=None,
+    ):
+        return self.match_service.baixar_dados_rodada_api_football(
+            liga_id=liga_id,
+            temporada=temporada,
+            rodada=rodada,
+            status=status,
+            usar_cache=usar_cache,
+            max_partidas=max_partidas,
+        )
+
+    def carregar_dados_rodada_api_football(self, liga_id, temporada, rodada):
+        return self.match_service.carregar_dados_rodada_api_football(
+            liga_id,
+            temporada,
+            rodada,
+        )
+
+    def listar_jogadores_disponiveis_cache_rodada_api_football(
+        self,
+        liga_id,
+        temporada,
+        rodada,
+    ):
+        return self.match_service.listar_jogadores_disponiveis_cache_rodada_api_football(
+            liga_id,
+            temporada,
+            rodada,
+        )
+
+    def montar_rodada_por_cache_rodada_api_football(
+        self,
+        liga_id,
+        temporada,
+        rodada,
+        numero_rodada,
+        jogadores_escalados,
+    ):
+        return self.match_service.montar_rodada_por_cache_rodada_api_football(
+            liga_id=liga_id,
+            temporada=temporada,
+            rodada=rodada,
+            numero_rodada=numero_rodada,
+            jogadores_escalados=jogadores_escalados,
+        )
 
     def gerar_ranking_usuarios(self):
         return self.user_service.gerar_ranking_usuarios()
