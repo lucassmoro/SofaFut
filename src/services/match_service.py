@@ -1,4 +1,4 @@
-from external.api_client import SofaScoreApiClient
+from src.external.api_client import SofaScoreApiClient
 
 '''
 Classe que vai chamar a API
