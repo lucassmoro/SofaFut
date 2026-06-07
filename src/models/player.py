@@ -8,6 +8,7 @@ class Player:
         idade=0,
         api_id=None,
         nome_time=None,
+        valor_mercado=10.0,
     ):
         
         self.__nome = nome
@@ -16,6 +17,7 @@ class Player:
         self.__idade = idade
         self.__api_id = api_id
         self.__nome_time = nome_time
+        self.__valor_mercado = valor_mercado
         
 
     @property
@@ -65,3 +67,11 @@ class Player:
     @nome_time.setter
     def nome_time(self, nome_time):
         self.__nome_time = nome_time
+
+    @property
+    def valor_mercado(self):
+        return self.__valor_mercado
+
+    @valor_mercado.setter
+    def valor_mercado(self, valor_mercado):
+        self.__valor_mercado = valor_mercado

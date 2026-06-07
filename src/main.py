@@ -4,6 +4,7 @@ import tkinter as tk
 from src.controllers import AppController
 from src.controllers import AuthController
 from src.controllers import LineupController
+from src.controllers import MarketController
 from src.controllers import PlayerCatalogController
 from src.controllers import RankingController
 from src.controllers import RoundController
@@ -18,6 +19,7 @@ def main():
     round_controller = RoundController(app_controller)
     lineup_controller = LineupController(app_controller)
     ranking_controller = RankingController(app_controller)
+    market_controller = MarketController(app_controller)
 
     if os.getenv("SOFAFUT_VIEW") == "console":
         executar_console(
@@ -26,16 +28,18 @@ def main():
             round_controller,
             lineup_controller,
             ranking_controller,
+            market_controller,
         )
         return
 
     try:
-        app = SofaFutGui(
+        app = _criar_app_grafico(
             auth_controller=auth_controller,
             player_catalog_controller=player_catalog_controller,
             round_controller=round_controller,
             lineup_controller=lineup_controller,
             ranking_controller=ranking_controller,
+            market_controller=market_controller,
         )
         app.run()
     except tk.TclError as erro:
@@ -47,6 +51,7 @@ def main():
             round_controller,
             lineup_controller,
             ranking_controller,
+            market_controller,
         )
 
 
@@ -56,6 +61,7 @@ def executar_console(
     round_controller,
     lineup_controller,
     ranking_controller,
+    market_controller=None,
 ):
     view = ConsoleView()
 
@@ -161,6 +167,46 @@ def testar_fluxo_console(
         jogadores_calculados,
     )
     view.mostrar_ranking(ranking_controller.formatar_ranking_usuarios())
+
+
+def _criar_app_grafico(
+    auth_controller,
+    player_catalog_controller,
+    round_controller,
+    lineup_controller,
+    ranking_controller,
+    market_controller,
+):
+    if os.getenv("SOFAFUT_GUI") == "tkinter":
+        return SofaFutGui(
+            auth_controller=auth_controller,
+            player_catalog_controller=player_catalog_controller,
+            round_controller=round_controller,
+            lineup_controller=lineup_controller,
+            ranking_controller=ranking_controller,
+            market_controller=market_controller,
+        )
+
+    try:
+        from src.views.pyside_view import SofaFutPySideGui
+    except ImportError:
+        return SofaFutGui(
+            auth_controller=auth_controller,
+            player_catalog_controller=player_catalog_controller,
+            round_controller=round_controller,
+            lineup_controller=lineup_controller,
+            ranking_controller=ranking_controller,
+            market_controller=market_controller,
+        )
+
+    return SofaFutPySideGui(
+        auth_controller=auth_controller,
+        player_catalog_controller=player_catalog_controller,
+        round_controller=round_controller,
+        lineup_controller=lineup_controller,
+        ranking_controller=ranking_controller,
+        market_controller=market_controller,
+    )
 
 
 def _env_int(nome, padrao=None):

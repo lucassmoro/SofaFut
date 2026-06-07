@@ -32,6 +32,7 @@ class PlayerRepository:
                     idade=jogador["idade"],
                     api_id=jogador.get("api_id"),
                     nome_time=jogador.get("nome_time"),
+                    valor_mercado=jogador.get("valor_mercado", 10.0),
                 )
             )
 

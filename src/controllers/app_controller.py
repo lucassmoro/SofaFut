@@ -6,6 +6,7 @@ from src.repositories.players_repository import PlayerRepository
 from src.repositories.rounds_repository import RoundRepository
 from src.repositories.users_database import UserDataBase
 from src.services.auth_service import AuthService
+from src.services.market_service import MarketService
 from src.services.match_service import MatchService
 from src.services.player_service import PlayerService
 from src.services.session import Session
@@ -34,6 +35,7 @@ class AppController:
         self.auth_service = AuthService(self.user_database, self.session)
         self.user_service = UserService(self.user_database, self.session)
         self.team_fantasy_service = TeamFantasyService()
+        self.market_service = MarketService()
         self.player_service = PlayerService(self.player_repository)
         self.match_service = MatchService(
             sofa_api=sofa_api or SofaScoreApiClient(),
@@ -304,6 +306,32 @@ class AppController:
     def exibir_historico_pontuacao_usuario(self, username: str):
         historico = self.gerar_historico_pontuacao_usuario(username)
         return self.user_service.formatar_historico_pontuacao_usuario(historico)
+
+    def comprar_jogador(self, username: str, jogador):
+        user = self._buscar_usuario_autorizado(username)
+        return self.market_service.comprar(user, jogador)
+
+    def vender_jogador(self, username: str, jogador):
+        user = self._buscar_usuario_autorizado(username)
+        return self.market_service.vender(user, jogador)
+
+    def listar_elenco(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return user.team_fantasy.elenco
+
+    def listar_transacoes_mercado(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return user.team_fantasy.transacoes
+
+    def patrimonio_time_fantasy(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return user.team_fantasy.patrimonio
+
+    def abrir_mercado(self):
+        self.market_service.abrir_mercado()
+
+    def fechar_mercado(self):
+        self.market_service.fechar_mercado()
 
     def _buscar_usuario_autorizado(self, username: str):
         if not self.session.is_logged(username):

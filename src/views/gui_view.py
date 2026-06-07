@@ -11,12 +11,14 @@ class SofaFutGui:
         round_controller,
         lineup_controller,
         ranking_controller,
+        market_controller=None,
     ):
         self.auth_controller = auth_controller
         self.player_catalog_controller = player_catalog_controller
         self.round_controller = round_controller
         self.lineup_controller = lineup_controller
         self.ranking_controller = ranking_controller
+        self.market_controller = market_controller
         self.username = None
         self.jogadores_catalogo = []
         self.jogadores_disponiveis = []
@@ -118,11 +120,13 @@ class SofaFutGui:
         self.tabs = ttk.Notebook(self.container)
         self.tabs.pack(fill=tk.BOTH, expand=True)
         self._montar_aba_rodada()
+        self._montar_aba_mercado()
         self._montar_aba_escalacao()
         self._montar_aba_ranking()
 
         self._carregar_catalogo()
         self._atualizar_ranking()
+        self._atualizar_mercado()
 
     def _montar_aba_rodada(self):
         tab = ttk.Frame(self.tabs, padding=12)
@@ -208,6 +212,72 @@ class SofaFutGui:
         self.score_text = tk.Text(tab, height=8, wrap=tk.WORD)
         self.score_text.pack(fill=tk.X, pady=(10, 0))
 
+    def _montar_aba_mercado(self):
+        tab = ttk.Frame(self.tabs, padding=12)
+        self.tabs.add(tab, text="Mercado")
+
+        header = ttk.Frame(tab)
+        header.pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(header, text="Atualizar Mercado", command=self._atualizar_mercado).pack(side=tk.LEFT)
+        self.market_status_label = ttk.Label(header, text="", style="Subtitle.TLabel")
+        self.market_status_label.pack(side=tk.LEFT, padx=12)
+
+        panes = ttk.PanedWindow(tab, orient=tk.HORIZONTAL)
+        panes.pack(fill=tk.BOTH, expand=True)
+
+        catalog_frame = ttk.Frame(panes, padding=(0, 0, 8, 0))
+        elenco_frame = ttk.Frame(panes, padding=(8, 0, 0, 0))
+        panes.add(catalog_frame, weight=3)
+        panes.add(elenco_frame, weight=2)
+
+        ttk.Label(catalog_frame, text="Catálogo", style="Subtitle.TLabel").pack(anchor=tk.W, pady=(0, 6))
+        market_columns = ("api_id", "nome", "time", "posicao", "valor")
+        self.market_catalog_tree = ttk.Treeview(
+            catalog_frame,
+            columns=market_columns,
+            show="headings",
+            selectmode="browse",
+        )
+        for column, label, width in (
+            ("api_id", "ID", 72),
+            ("nome", "Jogador", 220),
+            ("time", "Time", 150),
+            ("posicao", "Pos", 60),
+            ("valor", "Valor", 80),
+        ):
+            self.market_catalog_tree.heading(column, text=label)
+            self.market_catalog_tree.column(column, width=width, anchor=tk.W)
+        self.market_catalog_tree.pack(fill=tk.BOTH, expand=True)
+        ttk.Button(catalog_frame, text="Comprar Selecionado", command=self._comprar_selecionado).pack(
+            anchor=tk.W,
+            pady=(10, 0),
+        )
+
+        ttk.Label(elenco_frame, text="Elenco", style="Subtitle.TLabel").pack(anchor=tk.W, pady=(0, 6))
+        self.market_roster_tree = ttk.Treeview(
+            elenco_frame,
+            columns=market_columns,
+            show="headings",
+            selectmode="browse",
+        )
+        for column, label, width in (
+            ("api_id", "ID", 72),
+            ("nome", "Jogador", 180),
+            ("time", "Time", 130),
+            ("posicao", "Pos", 60),
+            ("valor", "Valor", 80),
+        ):
+            self.market_roster_tree.heading(column, text=label)
+            self.market_roster_tree.column(column, width=width, anchor=tk.W)
+        self.market_roster_tree.pack(fill=tk.BOTH, expand=True)
+        ttk.Button(elenco_frame, text="Vender Selecionado", command=self._vender_selecionado).pack(
+            anchor=tk.W,
+            pady=(10, 0),
+        )
+
+        self.transactions_text = tk.Text(elenco_frame, height=6, wrap=tk.WORD)
+        self.transactions_text.pack(fill=tk.X, pady=(10, 0))
+
     def _montar_aba_ranking(self):
         tab = ttk.Frame(self.tabs, padding=12)
         self.tabs.add(tab, text="Ranking")
@@ -220,6 +290,7 @@ class SofaFutGui:
         jogadores = self.player_catalog_controller.carregar_jogadores_temporada(temporada=temporada)
         self.jogadores_catalogo = jogadores
         self.round_status_label.configure(text=f"Catálogo carregado: {len(jogadores)} jogadores")
+        self._preencher_catalogo_mercado()
 
     def _carregar_rodada(self):
         try:
@@ -371,6 +442,98 @@ class SofaFutGui:
             return
         self.ranking_text.delete("1.0", tk.END)
         self.ranking_text.insert(tk.END, self.ranking_controller.formatar_ranking_usuarios())
+
+    def _atualizar_mercado(self):
+        if self.market_controller is None or not hasattr(self, "market_catalog_tree"):
+            return
+
+        self._preencher_catalogo_mercado()
+        self._preencher_elenco_mercado()
+
+    def _preencher_catalogo_mercado(self):
+        if not hasattr(self, "market_catalog_tree"):
+            return
+
+        self.market_catalog_tree.delete(*self.market_catalog_tree.get_children())
+        for index, jogador in enumerate(self.jogadores_catalogo):
+            self.market_catalog_tree.insert(
+                "",
+                tk.END,
+                iid=str(index),
+                values=self._valores_jogador_mercado(jogador),
+            )
+
+    def _preencher_elenco_mercado(self):
+        if self.market_controller is None or not hasattr(self, "market_roster_tree"):
+            return
+
+        self.market_roster_tree.delete(*self.market_roster_tree.get_children())
+        elenco = self.market_controller.listar_elenco(self.username)
+        for index, jogador in enumerate(elenco):
+            self.market_roster_tree.insert(
+                "",
+                tk.END,
+                iid=str(index),
+                values=self._valores_jogador_mercado(jogador),
+            )
+
+        patrimonio = self.market_controller.patrimonio(self.username)
+        self.market_status_label.configure(
+            text=f"Patrimônio: {patrimonio:.2f} | Elenco: {len(elenco)} jogadores"
+        )
+        self._preencher_transacoes()
+
+    def _preencher_transacoes(self):
+        self.transactions_text.delete("1.0", tk.END)
+        for transacao in self.market_controller.listar_transacoes(self.username)[-8:]:
+            self.transactions_text.insert(
+                tk.END,
+                (
+                    f"{transacao.data_hora:%d/%m %H:%M} - "
+                    f"{transacao.tipo.value}: {transacao.jogador.nome} "
+                    f"({transacao.valor:.2f})\n"
+                ),
+            )
+
+    def _comprar_selecionado(self):
+        if self.market_controller is None:
+            return
+
+        selection = self.market_catalog_tree.selection()
+        if not selection:
+            return
+
+        try:
+            jogador = self.jogadores_catalogo[int(selection[0])]
+            self.market_controller.comprar(self.username, jogador)
+            self._atualizar_mercado()
+        except Exception as exc:
+            self._mostrar_erro(str(exc))
+
+    def _vender_selecionado(self):
+        if self.market_controller is None:
+            return
+
+        selection = self.market_roster_tree.selection()
+        if not selection:
+            return
+
+        try:
+            elenco = self.market_controller.listar_elenco(self.username)
+            jogador = elenco[int(selection[0])]
+            self.market_controller.vender(self.username, jogador)
+            self._atualizar_mercado()
+        except Exception as exc:
+            self._mostrar_erro(str(exc))
+
+    def _valores_jogador_mercado(self, jogador):
+        return (
+            jogador.api_id or "",
+            jogador.nome or "",
+            jogador.nome_time or "",
+            jogador.posicao or "",
+            f"{float(jogador.valor_mercado or 0):.2f}",
+        )
 
     def _max_partidas(self):
         valor = self.max_partidas_var.get().strip()

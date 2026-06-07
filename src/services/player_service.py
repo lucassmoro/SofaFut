@@ -55,6 +55,12 @@ class PlayerService:
             estatistica = self._primeira_estatistica(jogador_api)
             dados_time = estatistica.get("team", {})
             dados_jogo = estatistica.get("games", {})
+            valor_mercado = (
+                dados_jogador.get("valor_mercado")
+                or dados_jogador.get("market_value")
+                or jogador_api.get("valor_mercado")
+                or 10.0
+            )
 
             jogadores.append(
                 Player(
@@ -72,6 +78,7 @@ class PlayerService:
                         or dados_jogador.get("nome_time")
                         or dados_jogador.get("time")
                     ),
+                    valor_mercado=valor_mercado,
                 )
             )
 
