@@ -1,3 +1,4 @@
+from src.builders.lineup_builder import LineupBuilder
 from src.models.match import Match
 from src.models.rounds import Round
 from src.models.lineup import Lineup
@@ -43,18 +44,14 @@ class TeamFantasyService:
     def montar_escalacao(self, user : User, rodada : int, jogadores : list[PlayerFantasy]):
         team = user.team_fantasy
 
-        if len(jogadores) != 11:
-            raise Exception("QUANTIDADE INCORRETA DE JOGADORES")        
+        lineup = (
+            LineupBuilder()
+            .com_rodada(rodada)
+            .com_jogadores(jogadores)
+            .build()
+        )
 
-        capitao = 0
-        for jogador in jogadores:
-            if jogador.capitao:
-                capitao += 1
-
-        if capitao != 1: 
-            raise Exception("QUANTIDADE DE CAPITAO INCORRETA")
-        
-        team.escalacoes[rodada] = Lineup(rodada=rodada, jogadores=jogadores)
+        team.escalacoes[rodada] = lineup
 
         return team.escalacoes[rodada]
 
