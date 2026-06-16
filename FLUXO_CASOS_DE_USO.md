@@ -136,6 +136,17 @@ As posicoes vindas da API/cache sao normalizadas no codigo antes de aparecerem n
 
 **Finalizacao:** a aba Rodada mostra jogadores disponiveis com posicoes em portugues e status com a quantidade de partidas cacheadas. A aba Mercado passa a listar atletas negociaveis da rodada.
 
+**Fluxo para ver jogos e resultados da rodada:**
+
+1. Na aba `Jogos`, o usuario seleciona temporada e rodada.
+2. Ao clicar em `Carregar jogos`, `RoundMatchesScreen.carregar_jogos` chama `RoundController.listar_jogos_rodada`.
+3. `RoundController.listar_jogos_rodada` usa `carregar_dados_rodada_cache`, lendo somente o cache local da rodada.
+4. O controller extrai `fixture`, `teams`, `goals`, `status` e `venue` de `partidas_api.response`.
+5. A tela formata data e placar como `mandante x visitante`.
+6. `fill_table` preenche a tabela com data, status, mandante, placar, visitante, estadio e cidade.
+
+**Finalizacao dos jogos:** a aba Jogos mostra os resultados das partidas da rodada sem chamar API externa.
+
 ## UC18 - Buscar Dados
 
 **Entrada na interface:** ocorre dentro do fluxo da aba `Rodada`, ao carregar dados da rodada.

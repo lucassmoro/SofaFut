@@ -48,6 +48,42 @@ class RoundController:
             self.nome_rodada_api(numero_rodada),
         )
 
+    def listar_jogos_rodada(
+        self,
+        temporada,
+        numero_rodada,
+        liga_id=LIGA_BRASILEIRAO,
+    ):
+        dados = self.carregar_dados_rodada_cache(
+            temporada=temporada,
+            numero_rodada=numero_rodada,
+            liga_id=liga_id,
+        )
+        jogos = []
+
+        for partida in dados.get("partidas_api", {}).get("response", []):
+            fixture = partida.get("fixture", {})
+            status = fixture.get("status", {})
+            venue = fixture.get("venue", {})
+            teams = partida.get("teams", {})
+            goals = partida.get("goals", {})
+
+            jogos.append(
+                {
+                    "fixture_id": fixture.get("id"),
+                    "data": fixture.get("date") or "",
+                    "status": status.get("short") or status.get("long") or "",
+                    "mandante": teams.get("home", {}).get("name") or "",
+                    "gols_mandante": goals.get("home"),
+                    "gols_visitante": goals.get("away"),
+                    "visitante": teams.get("away", {}).get("name") or "",
+                    "estadio": venue.get("name") or "",
+                    "cidade": venue.get("city") or "",
+                }
+            )
+
+        return jogos
+
     def listar_jogadores_disponiveis(
         self,
         temporada,

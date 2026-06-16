@@ -14,6 +14,7 @@ from src.views.pyside.style import STYLE
 from src.views.pyside.uc03_acessar_estatisticas import PlayerStatsScreen
 from src.views.pyside.uc04_filtrar_atletas import FilterPlayersScreen
 from src.views.pyside.uc05_comparar_atletas import ComparePlayersScreen
+from src.views.pyside.uc06_jogos_rodada import RoundMatchesScreen
 from src.views.pyside.uc06_uc18_rodada import RoundScreen
 from src.views.pyside.uc07_favoritos import FavoritesScreen
 from src.views.pyside.uc08_negociar_atletas import MarketScreen
@@ -56,6 +57,7 @@ class MainWindow(QMainWindow):
         self.user_label = None
         self.login_window = None
         self.round_screen = None
+        self.round_matches_screen = None
         self.stats_screen = None
         self.filter_screen = None
         self.market_screen = None
@@ -94,6 +96,7 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self._build_screens()
         self.tabs.addTab(self.round_screen.build(), "Rodada")
+        self.tabs.addTab(self.round_matches_screen.build(), "Jogos")
         self.tabs.addTab(self.filter_screen.build(), "Atletas")
         self.tabs.addTab(self.stats_screen.build(), "Estatisticas")
         self.tabs.addTab(self.market_screen.build(), "Mercado")
@@ -111,6 +114,7 @@ class MainWindow(QMainWindow):
 
     def _build_screens(self):
         self.stats_screen = PlayerStatsScreen(self.context, self._erro)
+        self.round_matches_screen = RoundMatchesScreen(self.context, self._erro)
         self.filter_screen = FilterPlayersScreen(self.context, self._erro)
         self.compare_screen = ComparePlayersScreen(self.context, self._erro)
         self.favorites_screen = FavoritesScreen(self.context, self._erro)
@@ -133,7 +137,7 @@ class MainWindow(QMainWindow):
         )
         self.market_screen = MarketScreen(
             context=self.context,
-            show_lineup=lambda: self.tabs.setCurrentIndex(4),
+            show_lineup=lambda: self.tabs.setCurrentIndex(5),
             refresh_lineup=lambda status=None: self.lineup_screen.preencher(status),
             refresh_favorites=lambda: self.favorites_screen.preencher(),
             refresh_history=lambda: self.history_screen.preencher(),
@@ -142,7 +146,7 @@ class MainWindow(QMainWindow):
         )
         self.round_screen = RoundScreen(
             context=self.context,
-            show_market=lambda: self.tabs.setCurrentIndex(3),
+            show_market=lambda: self.tabs.setCurrentIndex(4),
             on_catalog_loaded=self._catalogo_carregado,
             on_players_loaded=lambda: self.market_screen.preencher_catalogo(),
             on_round_reset=lambda: self.market_screen.reiniciar_elenco_rodada(),

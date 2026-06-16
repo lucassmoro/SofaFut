@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
 
 @dataclass
@@ -34,18 +34,32 @@ def table(headers):
     widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     widget.verticalHeader().setVisible(False)
     widget.setAlternatingRowColors(True)
+    widget.setShowGrid(False)
+    widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    widget.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+    widget.setWordWrap(False)
+    widget.setCornerButtonEnabled(False)
+    widget.setProperty("role", "data-table")
+    widget.horizontalHeader().setHighlightSections(False)
+    widget.horizontalHeader().setMinimumSectionSize(72)
+    widget.horizontalHeader().setStretchLastSection(False)
+    widget.verticalHeader().setDefaultSectionSize(36)
+    _apply_column_resize_modes(widget)
     return widget
 
 
 def fill_table(widget, rows):
     widget.setRowCount(len(rows))
+    headers = [_normalized_header(widget.horizontalHeaderItem(index).text()) for index in range(widget.columnCount())]
     for row_index, values in enumerate(rows):
         for column_index, value in enumerate(values):
             item = QTableWidgetItem(str(value))
-            if column_index in {0, 3, 4}:
+            if headers[column_index] in CENTERED_HEADERS:
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            elif headers[column_index] in RIGHT_ALIGNED_HEADERS:
+                item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             widget.setItem(row_index, column_index, item)
-    widget.resizeColumnsToContents()
+    _apply_column_resize_modes(widget)
 
 
 def fill_players_table(widget, jogadores):
@@ -85,3 +99,51 @@ def sortable_value(value):
         return (0, float(value))
     except (TypeError, ValueError):
         return (0, str(value).casefold())
+
+
+COMPACT_HEADERS = {
+    "id",
+    "pos",
+    "min",
+    "tipo",
+    "status",
+    "rodada",
+    "valor",
+    "capitao",
+    "pontuacao",
+    "jogadores",
+    "placar",
+}
+
+CENTERED_HEADERS = {
+    "id",
+    "pos",
+    "min",
+    "status",
+    "rodada",
+    "capitao",
+    "jogadores",
+    "placar",
+}
+
+RIGHT_ALIGNED_HEADERS = {
+    "valor",
+    "patrimonio apos",
+    "pontuacao",
+}
+
+
+def _normalized_header(label):
+    return str(label or "").strip().casefold()
+
+
+def _apply_column_resize_modes(widget):
+    header = widget.horizontalHeader()
+    for index in range(widget.columnCount()):
+        item = widget.horizontalHeaderItem(index)
+        header_name = _normalized_header(item.text() if item else "")
+        if header_name in COMPACT_HEADERS:
+            mode = QHeaderView.ResizeMode.ResizeToContents
+        else:
+            mode = QHeaderView.ResizeMode.Stretch
+        header.setSectionResizeMode(index, mode)
