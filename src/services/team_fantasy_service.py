@@ -8,8 +8,12 @@ from src.models.player import Player
 from src.repositories.rounds_repository import RoundRepository
 from src.models.user import User
 from src.models.team_fantasy import TeamFantasy
+from src.strategies.pontuacao_strategy_factory import PontuacaoStrategyFactory
 
 class TeamFantasyService:
+
+    def __init__(self):
+        self.pontuacao_strategy_factory = PontuacaoStrategyFactory()
 
     def calcular_pontuacao_lineup(self, escalacao : Lineup, rodadas_repo : RoundRepository):
 
@@ -20,26 +24,14 @@ class TeamFantasyService:
                 for jogador_fantasy in escalacao.jogadores: # acesssa os player_fantasy
                     
                     if jogador_fantasy.jogador == jogador.jogador: # verifica se ambos player_ referenciam o mesmo jogador
-                        jogador_fantasy.pontuacao = self.calculo_pontuacao_logica(jogador, jogador_fantasy.capitao)
+                        jogador_fantasy.pontuacao = self.calcular_pontuacao_jogador(jogador, jogador_fantasy.capitao)
                         escalacao.pontuacao += jogador_fantasy.pontuacao
 
         return escalacao.pontuacao
 
-    def calculo_pontuacao_logica(self, jogador : MatchPlayerStats, capitao : bool):
-        pontuacao = 0
-        if jogador.atuou:
-
-            pontuacao += jogador.gols * 40 
-            pontuacao += jogador.assistencias * 20
-            pontuacao -= jogador.cartoes_amarelos * 10
-            pontuacao -= jogador.cartoes_vermelhos * 50
-            pontuacao += jogador.faltas * 3
-            pontuacao -= jogador.gols_sofridos * 10
-
-        if capitao:
-            pontuacao *= 2
-
-        return pontuacao
+    def calcular_pontuacao_jogador(self, jogador : MatchPlayerStats, capitao : bool):
+        strategy = self.pontuacao_strategy_factory.criar_por_posicao(jogador.jogador.posicao)
+        return strategy.calcular(jogador, capitao)
     
     def montar_escalacao(self, user : User, rodada : int, jogadores : list[PlayerFantasy]):
         team = user.team_fantasy

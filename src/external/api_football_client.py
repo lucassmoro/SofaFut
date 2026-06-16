@@ -3,7 +3,7 @@ import os
 from urllib.parse import urlencode
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
-
+from src.config import API_FOOTBALL_KEY
 
 class ApiFootballRateLimitError(RuntimeError):
     pass
@@ -13,7 +13,7 @@ class ApiFootballClient:
     BASE_URL = "https://v3.football.api-sports.io"
 
     def __init__(self, api_key=None, timeout=15):
-        self.api_key = api_key or os.getenv("API_FOOTBALL_KEY")
+        self.api_key = api_key or os.getenv("API_FOOTBALL_KEY") or API_FOOTBALL_KEY
         self.timeout = timeout
 
         if not self.api_key:
