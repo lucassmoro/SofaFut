@@ -19,6 +19,8 @@ class User:
         self.__pontuacao = pontuacao
         self.__saldo = saldo
         self.__team_fantasy = TeamFantasy(nome_team_fantasy)
+        self.__jogadores_favoritos = []
+        self.__clubes_favoritos = []
 
     def _generate_hash(self, senha):
         return hashlib.sha256(senha.encode()).hexdigest()
@@ -82,6 +84,14 @@ class User:
     @team_fantasy.setter
     def team_fantasy(self, nome):
         self.__team_fantasy = nome
+
+    @property
+    def jogadores_favoritos(self):
+        return self.__jogadores_favoritos
+
+    @property
+    def clubes_favoritos(self):
+        return self.__clubes_favoritos
     
 
 

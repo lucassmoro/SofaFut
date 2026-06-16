@@ -30,6 +30,7 @@ class MarketService:
                 jogador=jogador,
                 tipo=TipoTransacao.COMPRA,
                 valor=valor,
+                patrimonio_apos=team.patrimonio,
             )
         )
         return team
@@ -57,6 +58,7 @@ class MarketService:
                 jogador=jogador_elenco,
                 tipo=TipoTransacao.VENDA,
                 valor=valor,
+                patrimonio_apos=team.patrimonio,
             )
         )
         return team
@@ -66,6 +68,12 @@ class MarketService:
 
     def fechar_mercado(self):
         self.mercado_aberto = False
+
+    def historico_patrimonio(self, user: User):
+        return sorted(
+            user.team_fantasy.transacoes,
+            key=lambda transacao: transacao.data_hora,
+        )
 
     def _validar_mercado_aberto(self):
         if not self.mercado_aberto:

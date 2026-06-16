@@ -6,8 +6,10 @@ from src.repositories.players_repository import PlayerRepository
 from src.repositories.rounds_repository import RoundRepository
 from src.repositories.users_database import UserDataBase
 from src.services.auth_service import AuthService
+from src.services.favorite_service import FavoriteService
 from src.services.market_service import MarketService
 from src.services.match_service import MatchService
+from src.services.player_comparison_service import PlayerComparisonService
 from src.services.player_service import PlayerService
 from src.services.session import Session
 from src.services.team_fantasy_service import TeamFantasyService
@@ -37,6 +39,8 @@ class AppController:
         self.team_fantasy_service = TeamFantasyService()
         self.market_service = MarketService()
         self.player_service = PlayerService(self.player_repository)
+        self.favorite_service = FavoriteService()
+        self.player_comparison_service = PlayerComparisonService()
         self.match_service = MatchService(
             sofa_api=sofa_api or SofaScoreApiClient(),
             api_football=self.api_football,
@@ -336,11 +340,42 @@ class AppController:
         user = self._buscar_usuario_autorizado(username)
         return user.team_fantasy.patrimonio
 
+    def historico_patrimonio(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return self.market_service.historico_patrimonio(user)
+
     def abrir_mercado(self):
         self.market_service.abrir_mercado()
 
     def fechar_mercado(self):
         self.market_service.fechar_mercado()
+
+    def comparar_jogadores(self, jogador_a, jogador_b):
+        return self.player_comparison_service.comparar(jogador_a, jogador_b)
+
+    def favoritar_jogador(self, username: str, jogador):
+        user = self._buscar_usuario_autorizado(username)
+        return self.favorite_service.favoritar_jogador(user, jogador)
+
+    def remover_favorito_jogador(self, username: str, jogador):
+        user = self._buscar_usuario_autorizado(username)
+        return self.favorite_service.remover_jogador(user, jogador)
+
+    def listar_jogadores_favoritos(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return self.favorite_service.listar_jogadores(user)
+
+    def favoritar_clube(self, username: str, nome_clube: str):
+        user = self._buscar_usuario_autorizado(username)
+        return self.favorite_service.favoritar_clube(user, nome_clube)
+
+    def remover_favorito_clube(self, username: str, nome_clube: str):
+        user = self._buscar_usuario_autorizado(username)
+        return self.favorite_service.remover_clube(user, nome_clube)
+
+    def listar_clubes_favoritos(self, username: str):
+        user = self._buscar_usuario_autorizado(username)
+        return self.favorite_service.listar_clubes(user)
 
     def _buscar_usuario_autorizado(self, username: str):
         if not self.session.is_logged(username):

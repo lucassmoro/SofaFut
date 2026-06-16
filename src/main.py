@@ -2,8 +2,10 @@ import os
 
 from src.controllers import AppController
 from src.controllers import AuthController
+from src.controllers import FavoriteController
 from src.controllers import LineupController
 from src.controllers import MarketController
+from src.controllers import PlayerComparisonController
 from src.controllers import PlayerCatalogController
 from src.controllers import RankingController
 from src.controllers import RoundController
@@ -14,6 +16,8 @@ def main():
     app_controller = AppController()
     auth_controller = AuthController(app_controller)
     player_catalog_controller = PlayerCatalogController(app_controller)
+    player_comparison_controller = PlayerComparisonController(app_controller)
+    favorite_controller = FavoriteController(app_controller)
     round_controller = RoundController(app_controller)
     lineup_controller = LineupController(app_controller)
     ranking_controller = RankingController(app_controller)
@@ -23,6 +27,8 @@ def main():
         executar_console(
             auth_controller,
             player_catalog_controller,
+            player_comparison_controller,
+            favorite_controller,
             round_controller,
             lineup_controller,
             ranking_controller,
@@ -33,6 +39,8 @@ def main():
     app = _criar_app_grafico(
         auth_controller=auth_controller,
         player_catalog_controller=player_catalog_controller,
+        player_comparison_controller=player_comparison_controller,
+        favorite_controller=favorite_controller,
         round_controller=round_controller,
         lineup_controller=lineup_controller,
         ranking_controller=ranking_controller,
@@ -44,6 +52,8 @@ def main():
 def executar_console(
     auth_controller,
     player_catalog_controller,
+    player_comparison_controller,
+    favorite_controller,
     round_controller,
     lineup_controller,
     ranking_controller,
@@ -59,6 +69,8 @@ def executar_console(
             view=view,
             auth_controller=auth_controller,
             player_catalog_controller=player_catalog_controller,
+            player_comparison_controller=player_comparison_controller,
+            favorite_controller=favorite_controller,
             round_controller=round_controller,
             lineup_controller=lineup_controller,
             ranking_controller=ranking_controller,
@@ -71,6 +83,8 @@ def testar_fluxo_console(
     view,
     auth_controller,
     player_catalog_controller,
+    player_comparison_controller,
+    favorite_controller,
     round_controller,
     lineup_controller,
     ranking_controller,
@@ -158,6 +172,8 @@ def testar_fluxo_console(
 def _criar_app_grafico(
     auth_controller,
     player_catalog_controller,
+    player_comparison_controller,
+    favorite_controller,
     round_controller,
     lineup_controller,
     ranking_controller,
@@ -173,6 +189,8 @@ def _criar_app_grafico(
     return SofaFutPySideGui(
         auth_controller=auth_controller,
         player_catalog_controller=player_catalog_controller,
+        player_comparison_controller=player_comparison_controller,
+        favorite_controller=favorite_controller,
         round_controller=round_controller,
         lineup_controller=lineup_controller,
         ranking_controller=ranking_controller,

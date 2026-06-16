@@ -22,3 +22,6 @@ class MarketController:
 
     def patrimonio(self, username):
         return self.app_controller.patrimonio_time_fantasy(username)
+
+    def historico_patrimonio(self, username):
+        return self.app_controller.historico_patrimonio(username)

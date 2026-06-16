@@ -17,9 +17,11 @@ class TransacaoMercado:
         valor: float,
         data_hora=None,
         id=None,
+        patrimonio_apos=None,
     ):
         self.id = id or str(uuid4())
         self.jogador = jogador
         self.tipo = tipo
         self.valor = valor
         self.data_hora = data_hora or datetime.now()
+        self.patrimonio_apos = patrimonio_apos
