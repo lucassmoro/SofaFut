@@ -19,7 +19,7 @@ class PontuacaoStrategyFactory:
         if posicao_normalizada in ["m", "meia", "meio-campo", "midfielder"]:
             return PontuacaoMeiaStrategy()
 
-        if posicao_normalizada in ["f", "atacante", "forward"]:
+        if posicao_normalizada in ["f", "atacante", "forward", "attacker"]:
             return PontuacaoAtacanteStrategy()
 
         return PontuacaoPadraoStrategy()

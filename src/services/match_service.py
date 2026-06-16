@@ -3,12 +3,12 @@ import unicodedata
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from src.external.api_client import SofaScoreApiClient
 from src.external.api_football_client import ApiFootballClient
 from src.external.api_football_client import ApiFootballRateLimitError
 from src.models.club import Club
 from src.models.match import Match
 from src.models.player import Player
+from src.models.player import normalizar_posicao
 from src.models.player_match import MatchPlayerStats
 from src.models.rounds import Round
 
@@ -23,23 +23,9 @@ class MatchService():
 
     def __init__(
         self,
-        sofa_api: SofaScoreApiClient | None = None,
         api_football: ApiFootballClient | None = None,
     ):
-        self.sofa_api = sofa_api
         self.api_football = api_football
-
-    def get_match_info(self, event_id):
-        if self.sofa_api is None:
-            raise ValueError("SofaScoreApiClient nao configurado")
-
-        evento = self.sofa_api.get_event(event_id)
-        estatisticas = self.sofa_api.get_event_statistics(event_id)
-
-        return {
-            "evento": evento,
-            "estatisticas": estatisticas,
-        }
 
     def buscar_partidas_por_data(
         self,
@@ -166,7 +152,9 @@ class MatchService():
                         {
                             "nome": jogador_api.get("player", {}).get("name"),
                             "time": nome_time,
-                            "posicao": stats[0].get("games", {}).get("position"),
+                            "posicao": normalizar_posicao(
+                                stats[0].get("games", {}).get("position")
+                            ),
                             "idade": 0,
                             "minutos": minutos,
                         }
@@ -348,7 +336,9 @@ class MatchService():
                                 "api_id": jogador_api.get("player", {}).get("id"),
                                 "nome": jogador_api.get("player", {}).get("name"),
                                 "time": nome_time,
-                                "posicao": stats[0].get("games", {}).get("position"),
+                                "posicao": normalizar_posicao(
+                                    stats[0].get("games", {}).get("position")
+                                ),
                                 "idade": 0,
                                 "minutos": minutos,
                                 "fixture_id": fixture_id,

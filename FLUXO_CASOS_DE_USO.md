@@ -24,6 +24,8 @@ Cada tela em `src/views/pyside/uc*.py` recebe esse contexto e callbacks para atu
 Interface PySide -> tela do caso de uso -> controller especifico -> AppController -> service/repositorio/modelo -> atualizacao da interface
 ```
 
+As posicoes vindas da API/cache sao normalizadas no codigo antes de aparecerem na interface ou entrarem no calculo: `G`/`Goalkeeper` vira `goleiro`, `D`/`Defender` vira `defensor`, `M`/`Midfielder` vira `meia` e `F`/`Forward`/`Attacker` vira `atacante`.
+
 ## UC01 - Registrar Conta
 
 **Entrada na interface:** tela inicial de login, botao `Cadastrar`.
@@ -94,7 +96,7 @@ Interface PySide -> tela do caso de uso -> controller especifico -> AppControlle
 8. O service retorna metricas de gols, assistencias, faltas, cartoes e gols sofridos.
 9. A tela tambem monta uma tabela com dados basicos do atleta.
 
-**Finalizacao:** a aba mostra dados cadastrais do atleta e suas metricas estatisticas.
+**Finalizacao:** a aba mostra dados cadastrais do atleta e suas metricas estatisticas, com posicao em portugues.
 
 ## UC04 - Filtrar Atletas
 
@@ -109,7 +111,7 @@ Interface PySide -> tela do caso de uso -> controller especifico -> AppControlle
 5. A tela aplica os filtros locais de nome, clube e posicao sobre a lista ordenada.
 6. O resultado final e enviado para `fill_players_table`.
 
-**Finalizacao:** a tabela da aba Atletas exibe apenas os jogadores que atendem aos filtros, com status informando a quantidade encontrada.
+**Finalizacao:** a tabela da aba Atletas exibe apenas os jogadores que atendem aos filtros, com posicoes em portugues e status informando a quantidade encontrada.
 
 ## UC06 - Ver Painel de Confrontos
 
@@ -132,7 +134,7 @@ Interface PySide -> tela do caso de uso -> controller especifico -> AppControlle
 13. O callback `on_players_loaded` atualiza o catalogo da aba Mercado.
 14. O callback `on_round_reset` limpa o elenco da rodada atual no mercado.
 
-**Finalizacao:** a aba Rodada mostra jogadores disponiveis e status com a quantidade de partidas cacheadas. A aba Mercado passa a listar atletas negociaveis da rodada.
+**Finalizacao:** a aba Rodada mostra jogadores disponiveis com posicoes em portugues e status com a quantidade de partidas cacheadas. A aba Mercado passa a listar atletas negociaveis da rodada.
 
 ## UC18 - Buscar Dados
 
@@ -211,7 +213,7 @@ Interface PySide -> tela do caso de uso -> controller especifico -> AppControlle
 3. Se possuir, chama `show_lineup`, mudando para a aba Escalacao.
 4. Chama `refresh_lineup` com mensagem orientando a escolha do capitao e calculo da pontuacao.
 
-**Finalizacao:** patrimonio, elenco, ultimas transacoes, escalacao e historico ficam sincronizados na interface.
+**Finalizacao:** patrimonio, elenco, ultimas transacoes, escalacao e historico ficam sincronizados na interface, mantendo as posicoes em portugues nas tabelas.
 
 ## UC15 - Validar Saldo
 
@@ -243,7 +245,7 @@ Interface PySide -> tela do caso de uso -> controller especifico -> AppControlle
 7. A venda atualiza novamente mercado e escalacao.
 8. Ao confirmar elenco no Mercado, `MarketScreen.confirmar_elenco` valida que existem exatamente 11 jogadores.
 
-**Finalizacao:** a aba Escalacao reflete o elenco comprado e, com 11 jogadores, fica pronta para escolha de capitao e calculo de pontuacao.
+**Finalizacao:** a aba Escalacao reflete o elenco comprado com posicoes em portugues e, com 11 jogadores, fica pronta para escolha de capitao e calculo de pontuacao.
 
 ## UC16 - Escolher Capitao
 
@@ -282,7 +284,7 @@ Interface PySide -> tela do caso de uso -> controller especifico -> AppControlle
 15. `score_text` recebe a pontuacao total e a pontuacao individual de cada jogador.
 16. O callback `refresh_ranking` atualiza a aba Ranking.
 
-**Finalizacao:** a pontuacao da rodada aparece na aba Escalacao e o ranking geral e recalculado.
+**Finalizacao:** a pontuacao da rodada aparece na aba Escalacao e o ranking geral e recalculado. A estrategia de pontuacao usa a posicao ja normalizada em portugues.
 
 ## UC17 - Verificar Atuacao do Atleta
 

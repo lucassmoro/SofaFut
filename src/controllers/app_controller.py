@@ -1,4 +1,3 @@
-from src.external.api_client import SofaScoreApiClient
 from src.external.api_football_client import ApiFootballClient
 from src.models.estatistics import Estatisticas
 from src.models.player_fantasy import PlayerFantasy
@@ -24,13 +23,12 @@ class AppController:
         user_database: UserDataBase | None = None,
         player_repository: PlayerRepository | None = None,
         round_repository: RoundRepository | None = None,
-        sofa_api: SofaScoreApiClient | None = None,
         api_football: ApiFootballClient | None = None,
         session: Session | None = None,
     ):
         self.session = session or Session()
         self.user_database = user_database or UserDataBase()
-        self.player_repository = player_repository or PlayerRepository(api_client=sofa_api)
+        self.player_repository = player_repository or PlayerRepository()
         self.round_repository = round_repository or RoundRepository()
         self.api_football = api_football
 
@@ -41,10 +39,7 @@ class AppController:
         self.player_service = PlayerService(self.player_repository)
         self.favorite_service = FavoriteService()
         self.player_comparison_service = PlayerComparisonService()
-        self.match_service = MatchService(
-            sofa_api=sofa_api or SofaScoreApiClient(),
-            api_football=self.api_football,
-        )
+        self.match_service = MatchService(api_football=self.api_football)
 
     def cadastrar_usuario(
         self,
@@ -146,9 +141,6 @@ class AppController:
 
     def listar_rodadas(self):
         return self.round_repository.listar_rodadas()
-
-    def buscar_partida(self, event_id: int):
-        return self.match_service.get_match_info(event_id)
 
     def buscar_partidas_por_data(
         self,

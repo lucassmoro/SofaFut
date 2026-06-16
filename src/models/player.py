@@ -1,3 +1,26 @@
+def normalizar_posicao(posicao):
+    valor = str(posicao or "").casefold().strip()
+    aliases = {
+        "g": "goleiro",
+        "goalkeeper": "goleiro",
+        "goleiro": "goleiro",
+        "d": "defensor",
+        "defender": "defensor",
+        "defensor": "defensor",
+        "zagueiro": "defensor",
+        "m": "meia",
+        "midfielder": "meia",
+        "meia": "meia",
+        "meio-campo": "meia",
+        "meio campo": "meia",
+        "f": "atacante",
+        "forward": "atacante",
+        "attacker": "atacante",
+        "atacante": "atacante",
+    }
+    return aliases.get(valor, "desconhecida")
+
+
 class Player:
 
     def __init__(
@@ -13,7 +36,7 @@ class Player:
         
         self.__nome = nome
         self.__time = time
-        self.__posicao = posicao
+        self.__posicao = normalizar_posicao(posicao)
         self.__idade = idade
         self.__api_id = api_id
         self.__nome_time = nome_time
@@ -42,7 +65,7 @@ class Player:
 
     @posicao.setter
     def posicao(self, posicao):
-        self.__posicao = posicao
+        self.__posicao = normalizar_posicao(posicao)
 
     @property
     def idade(self):
