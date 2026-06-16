@@ -1,5 +1,4 @@
 import os
-import tkinter as tk
 
 from src.controllers import AppController
 from src.controllers import AuthController
@@ -9,7 +8,6 @@ from src.controllers import PlayerCatalogController
 from src.controllers import RankingController
 from src.controllers import RoundController
 from src.views import ConsoleView
-from src.views import SofaFutGui
 
 
 def main():
@@ -32,27 +30,15 @@ def main():
         )
         return
 
-    try:
-        app = _criar_app_grafico(
-            auth_controller=auth_controller,
-            player_catalog_controller=player_catalog_controller,
-            round_controller=round_controller,
-            lineup_controller=lineup_controller,
-            ranking_controller=ranking_controller,
-            market_controller=market_controller,
-        )
-        app.run()
-    except tk.TclError as erro:
-        print(f"Nao foi possivel abrir interface grafica: {erro}")
-        print("Rodando fluxo de console. Para forcar console: SOFAFUT_VIEW=console")
-        executar_console(
-            auth_controller,
-            player_catalog_controller,
-            round_controller,
-            lineup_controller,
-            ranking_controller,
-            market_controller,
-        )
+    app = _criar_app_grafico(
+        auth_controller=auth_controller,
+        player_catalog_controller=player_catalog_controller,
+        round_controller=round_controller,
+        lineup_controller=lineup_controller,
+        ranking_controller=ranking_controller,
+        market_controller=market_controller,
+    )
+    app.run()
 
 
 def executar_console(
@@ -177,27 +163,12 @@ def _criar_app_grafico(
     ranking_controller,
     market_controller,
 ):
-    if os.getenv("SOFAFUT_GUI") == "tkinter":
-        return SofaFutGui(
-            auth_controller=auth_controller,
-            player_catalog_controller=player_catalog_controller,
-            round_controller=round_controller,
-            lineup_controller=lineup_controller,
-            ranking_controller=ranking_controller,
-            market_controller=market_controller,
-        )
-
     try:
         from src.views.pyside_view import SofaFutPySideGui
-    except ImportError:
-        return SofaFutGui(
-            auth_controller=auth_controller,
-            player_catalog_controller=player_catalog_controller,
-            round_controller=round_controller,
-            lineup_controller=lineup_controller,
-            ranking_controller=ranking_controller,
-            market_controller=market_controller,
-        )
+    except ImportError as erro:
+        raise RuntimeError(
+            "PySide6 nao esta instalado. Instale com: python3 -m pip install -r requirements.txt"
+        ) from erro
 
     return SofaFutPySideGui(
         auth_controller=auth_controller,
