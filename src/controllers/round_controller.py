@@ -36,6 +36,18 @@ class RoundController:
             max_partidas=max_partidas,
         )
 
+    def carregar_dados_rodada_cache(
+        self,
+        temporada,
+        numero_rodada,
+        liga_id=LIGA_BRASILEIRAO,
+    ):
+        return self.app_controller.carregar_dados_rodada_api_football(
+            liga_id,
+            temporada,
+            self.nome_rodada_api(numero_rodada),
+        )
+
     def listar_jogadores_disponiveis(
         self,
         temporada,

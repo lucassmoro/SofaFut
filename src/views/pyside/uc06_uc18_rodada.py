@@ -85,18 +85,16 @@ class RoundScreen:
         try:
             temporada = int(self.temporada_combo.currentText())
             rodada = int(self.rodada_combo.currentText())
-            max_partidas = self.max_partidas()
-            dados = self.context.round_controller.baixar_dados_rodada(
+            dados = self.context.round_controller.carregar_dados_rodada_cache(
                 temporada=temporada,
                 numero_rodada=rodada,
-                max_partidas=max_partidas,
             )
             total = len(dados.get("partidas_api", {}).get("response", []))
             cacheadas = len(dados.get("partidas", []))
             self.listar_jogadores_rodada()
             self.on_round_reset()
             self.round_status.setText(
-                f"Rodada {rodada}: {cacheadas}/{total} partidas com estatisticas"
+                f"Rodada {rodada}: {cacheadas}/{total} partidas com estatisticas em cache"
             )
         except Exception as exc:
             self.show_error(str(exc))
