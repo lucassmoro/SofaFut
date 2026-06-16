@@ -24,6 +24,7 @@ class LoginWindow(QMainWindow):
         lineup_controller,
         ranking_controller,
         market_controller,
+        user_profile_controller,
     ):
         super().__init__()
         self.auth_controller = auth_controller
@@ -34,6 +35,7 @@ class LoginWindow(QMainWindow):
         self.lineup_controller = lineup_controller
         self.ranking_controller = ranking_controller
         self.market_controller = market_controller
+        self.user_profile_controller = user_profile_controller
         self.main_window = None
 
         self.setWindowTitle("SofaFut")
@@ -103,6 +105,7 @@ class LoginWindow(QMainWindow):
             lineup_controller=self.lineup_controller,
             ranking_controller=self.ranking_controller,
             market_controller=self.market_controller,
+            user_profile_controller=self.user_profile_controller,
         )
         self.main_window.showMaximized()
         self.close()

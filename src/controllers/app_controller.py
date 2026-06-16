@@ -133,13 +133,12 @@ class AppController:
         jogadores: list[PlayerFantasy],
     ):
         user = self._buscar_usuario_autorizado(username)
-        self.team_fantasy_service.executar_rodada(
+        return self.team_fantasy_service.executar_rodada(
             user=user,
             rodada=rodada,
             jogadores=jogadores,
             rodadas_repo=self.round_repository,
         )
-        return user.pontuacao
 
     def adicionar_rodada(self, rodada):
         self.round_repository.adicionar_rodada(rodada)
@@ -352,6 +351,9 @@ class AppController:
 
     def comparar_jogadores(self, jogador_a, jogador_b):
         return self.player_comparison_service.comparar(jogador_a, jogador_b)
+
+    def estatisticas_jogador(self, jogador):
+        return self.player_comparison_service.estatisticas_jogador(jogador)
 
     def favoritar_jogador(self, username: str, jogador):
         user = self._buscar_usuario_autorizado(username)

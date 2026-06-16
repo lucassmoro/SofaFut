@@ -14,6 +14,7 @@ class SofaFutPySideGui:
         lineup_controller,
         ranking_controller,
         market_controller,
+        user_profile_controller,
     ):
         self.app = QApplication.instance() or QApplication([])
         self.window = LoginWindow(
@@ -25,6 +26,7 @@ class SofaFutPySideGui:
             lineup_controller=lineup_controller,
             ranking_controller=ranking_controller,
             market_controller=market_controller,
+            user_profile_controller=user_profile_controller,
         )
 
     def run(self):

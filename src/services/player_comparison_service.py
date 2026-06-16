@@ -1,7 +1,10 @@
 class PlayerComparisonService:
+    def estatisticas_jogador(self, jogador):
+        return self._estatisticas_fake(jogador)
+
     def comparar(self, jogador_a, jogador_b):
-        estatisticas_a = self._estatisticas_fake(jogador_a)
-        estatisticas_b = self._estatisticas_fake(jogador_b)
+        estatisticas_a = self.estatisticas_jogador(jogador_a)
+        estatisticas_b = self.estatisticas_jogador(jogador_b)
 
         metricas = [
             ("Posicao", jogador_a.posicao or "-", jogador_b.posicao or "-"),

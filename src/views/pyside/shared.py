@@ -16,6 +16,7 @@ class PySideViewContext:
     lineup_controller: Any
     ranking_controller: Any
     market_controller: Any
+    user_profile_controller: Any
     jogadores_catalogo: list = field(default_factory=list)
     jogadores_disponiveis: list = field(default_factory=list)
     jogadores_mercado: list = field(default_factory=list)

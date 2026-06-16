@@ -17,6 +17,7 @@ class MarketScreen:
         refresh_lineup,
         refresh_favorites,
         refresh_history,
+        refresh_evolution,
         show_error,
     ):
         self.context = context
@@ -24,6 +25,7 @@ class MarketScreen:
         self.refresh_lineup = refresh_lineup
         self.refresh_favorites = refresh_favorites
         self.refresh_history = refresh_history
+        self.refresh_evolution = refresh_evolution
         self.show_error = show_error
         self.market_catalog_table = None
         self.market_roster_table = None
@@ -158,6 +160,7 @@ class MarketScreen:
         self.refresh_lineup()
         self.refresh_favorites()
         self.refresh_history()
+        self.refresh_evolution()
 
     def preencher_catalogo(self):
         jogadores_rodada = self.context.lineup_controller.selecionar_players_do_catalogo(

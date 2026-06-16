@@ -11,6 +11,7 @@ class LineupScoreScreen:
         get_rodada,
         refresh_market,
         refresh_ranking,
+        refresh_evolution,
         show_error,
     ):
         self.context = context
@@ -18,6 +19,7 @@ class LineupScoreScreen:
         self.get_rodada = get_rodada
         self.refresh_market = refresh_market
         self.refresh_ranking = refresh_ranking
+        self.refresh_evolution = refresh_evolution
         self.show_error = show_error
         self.lineup_table = None
         self.lineup_status = None
@@ -131,5 +133,6 @@ class LineupScoreScreen:
                 )
             )
             self.refresh_ranking()
+            self.refresh_evolution()
         except Exception as exc:
             self.show_error(str(exc))

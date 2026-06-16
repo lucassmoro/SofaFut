@@ -7,3 +7,6 @@ class PlayerComparisonController:
 
     def comparar(self, jogador_a, jogador_b):
         return self.app_controller.comparar_jogadores(jogador_a, jogador_b)
+
+    def estatisticas_jogador(self, jogador):
+        return self.app_controller.estatisticas_jogador(jogador)

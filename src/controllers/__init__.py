@@ -7,6 +7,7 @@ from src.controllers.player_comparison_controller import PlayerComparisonControl
 from src.controllers.player_catalog_controller import PlayerCatalogController
 from src.controllers.ranking_controller import RankingController
 from src.controllers.round_controller import RoundController
+from src.controllers.user_profile_controller import UserProfileController
 
 __all__ = [
     "AppController",
@@ -18,4 +19,5 @@ __all__ = [
     "PlayerCatalogController",
     "RankingController",
     "RoundController",
+    "UserProfileController",
 ]

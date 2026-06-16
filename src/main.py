@@ -9,6 +9,7 @@ from src.controllers import PlayerComparisonController
 from src.controllers import PlayerCatalogController
 from src.controllers import RankingController
 from src.controllers import RoundController
+from src.controllers import UserProfileController
 from src.views import ConsoleView
 
 
@@ -22,6 +23,7 @@ def main():
     lineup_controller = LineupController(app_controller)
     ranking_controller = RankingController(app_controller)
     market_controller = MarketController(app_controller)
+    user_profile_controller = UserProfileController(app_controller)
 
     if os.getenv("SOFAFUT_VIEW") == "console":
         executar_console(
@@ -45,6 +47,7 @@ def main():
         lineup_controller=lineup_controller,
         ranking_controller=ranking_controller,
         market_controller=market_controller,
+        user_profile_controller=user_profile_controller,
     )
     app.run()
 
@@ -178,6 +181,7 @@ def _criar_app_grafico(
     lineup_controller,
     ranking_controller,
     market_controller,
+    user_profile_controller,
 ):
     try:
         from src.views.pyside_view import SofaFutPySideGui
@@ -195,6 +199,7 @@ def _criar_app_grafico(
         lineup_controller=lineup_controller,
         ranking_controller=ranking_controller,
         market_controller=market_controller,
+        user_profile_controller=user_profile_controller,
     )
 
 
