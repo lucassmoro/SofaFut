@@ -8,3 +8,6 @@ class RankingController:
 
     def ranking(self) -> list[TimeFantasy]:
         return self.ranking_service.ranking()
+
+    def historico_evolucao(self, usuario_id: str) -> list[dict[str, float | int]]:
+        return self.ranking_service.historico_evolucao(usuario_id)

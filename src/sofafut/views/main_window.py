@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QScrollArea,
@@ -135,6 +137,7 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._load_seasons()
         self._refresh_favorites_table()
+        self._refresh_fantasy_views()
 
     def _build_ui(self) -> None:
         root = QWidget()
@@ -148,6 +151,10 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self._build_games_tab())
         self.pages.addWidget(self._build_profile_tab())
         self.pages.addWidget(self._build_favorites_tab())
+        self.pages.addWidget(self._build_market_tab())
+        self.pages.addWidget(self._build_lineup_tab())
+        self.pages.addWidget(self._build_stats_tab())
+        self.pages.addWidget(self._build_ranking_tab())
         layout.addWidget(self.pages, 1)
         layout.addLayout(self._build_bottom_nav())
 
@@ -432,7 +439,14 @@ class MainWindow(QMainWindow):
         nav.setContentsMargins(0, 8, 0, 0)
         nav.addStretch(1)
 
-        for index, label in ((0, "Jogos"), (2, "Favoritos")):
+        for index, label in (
+            (0, "Jogos"),
+            (2, "Favoritos"),
+            (3, "Mercado"),
+            (4, "Escalacao"),
+            (5, "Estatisticas"),
+            (6, "Ranking"),
+        ):
             button = QPushButton(label)
             button.setCheckable(True)
             button.setProperty("role", "navButton")
@@ -457,9 +471,16 @@ class MainWindow(QMainWindow):
 
     def _select_page(self, index: int) -> None:
         self.pages.setCurrentIndex(index)
+        page_by_label = {
+            "Jogos": 0,
+            "Favoritos": 2,
+            "Mercado": 3,
+            "Escalacao": 4,
+            "Estatisticas": 5,
+            "Ranking": 6,
+        }
         for label, button in self.nav_buttons.items():
-            button_page = 0 if label == "Jogos" else 2
-            button.setChecked(button_page == index)
+            button.setChecked(page_by_label[label] == index)
 
     def _build_games_tab(self) -> QWidget:
         tab = QWidget()
@@ -506,11 +527,11 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(4, 8, 4, 8)
         layout.setSpacing(18)
 
-        title = QLabel(f"Perfil de {self.username}")
-        title.setProperty("role", "title")
-        subtitle = QLabel("Marque seus times favoritos para filtrar a aba Favoritos.")
+        self.profile_title = QLabel(f"Perfil de {self.username}")
+        self.profile_title.setProperty("role", "title")
+        subtitle = QLabel("Edite os dados de conta e marque times favoritos para filtrar a aba Favoritos.")
         subtitle.setProperty("role", "subtitle")
-        layout.addWidget(title)
+        layout.addWidget(self.profile_title)
         layout.addWidget(subtitle)
 
         panel = QFrame()
@@ -518,6 +539,24 @@ class MainWindow(QMainWindow):
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(18, 18, 18, 18)
         panel_layout.setSpacing(12)
+
+        profile = self.controller.profile()
+        profile_form = QHBoxLayout()
+        self.profile_username_input = QLineEdit(profile["username"])
+        self.profile_name_input = QLineEdit(profile["nome"])
+        self.profile_email_input = QLineEdit(profile["email"])
+        for label_text, input_widget in (
+            ("Usuario", self.profile_username_input),
+            ("Nome", self.profile_name_input),
+            ("Email", self.profile_email_input),
+        ):
+            profile_form.addWidget(self._filter_label(label_text))
+            profile_form.addWidget(input_widget)
+        profile_form.addWidget(self._action_button("Salvar perfil", self._save_profile))
+        panel_layout.addLayout(profile_form)
+        self.profile_status = QLabel("")
+        self.profile_status.setProperty("role", "subtitle")
+        panel_layout.addWidget(self.profile_status)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -626,6 +665,131 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.favorites_content_stack, 1)
         return tab
 
+    def _build_market_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(4, 8, 4, 8)
+        layout.setSpacing(14)
+
+        title = QLabel("Mercado de atletas")
+        title.setProperty("role", "title")
+        self.market_status = QLabel(self.controller.market_summary())
+        self.market_status.setProperty("role", "subtitle")
+        layout.addWidget(title)
+        layout.addWidget(self.market_status)
+
+        actions = QHBoxLayout()
+        actions.addWidget(self._action_button("Comprar", self._buy_selected_player))
+        actions.addWidget(self._action_button("Vender", self._sell_selected_player))
+        actions.addWidget(self._action_button("Favoritar atleta", self._toggle_favorite_player))
+        actions.addWidget(self._action_button("Abrir mercado", lambda: self._set_market(True)))
+        actions.addWidget(self._action_button("Fechar mercado", lambda: self._set_market(False)))
+        actions.addStretch()
+        layout.addLayout(actions)
+
+        self.market_table = QTableWidget(0, 7)
+        self.market_table.setHorizontalHeaderLabels(["ID", "Jogador", "Clube", "Pos", "Valor", "Favorito", "Elenco"])
+        self._configure_data_table(self.market_table)
+        layout.addWidget(self.market_table, 1)
+        return tab
+
+    def _build_lineup_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(4, 8, 4, 8)
+        layout.setSpacing(14)
+
+        title = QLabel("Escalacao")
+        title.setProperty("role", "title")
+        self.lineup_status = QLabel(self.controller.lineup_summary())
+        self.lineup_status.setProperty("role", "subtitle")
+        layout.addWidget(title)
+        layout.addWidget(self.lineup_status)
+
+        actions = QHBoxLayout()
+        actions.addWidget(self._filter_label("Formacao"))
+        self.formation_combo = QComboBox()
+        self.formation_combo.addItems(["4-3-3", "4-4-2", "3-5-2", "1"])
+        self.formation_combo.currentTextChanged.connect(self._set_formation)
+        actions.addWidget(self.formation_combo)
+        actions.addWidget(self._filter_label("Elenco"))
+        self.owned_player_combo = QComboBox()
+        actions.addWidget(self.owned_player_combo, 1)
+        actions.addWidget(self._action_button("Escalar", self._add_lineup_player))
+        actions.addWidget(self._action_button("Remover", self._remove_lineup_player))
+        actions.addWidget(self._action_button("Capitao", self._choose_captain))
+        actions.addWidget(self._action_button("Bloquear", self._lock_lineup))
+        actions.addWidget(self._action_button("Calcular", self._calculate_points))
+        layout.addLayout(actions)
+
+        self.lineup_table = QTableWidget(0, 7)
+        self.lineup_table.setHorizontalHeaderLabels(["ID", "Jogador", "Clube", "Pos", "Valor", "Capitao", "Pontos"])
+        self._configure_data_table(self.lineup_table)
+        layout.addWidget(self.lineup_table, 1)
+        return tab
+
+    def _build_stats_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(4, 8, 4, 8)
+        layout.setSpacing(14)
+
+        title = QLabel("Estatisticas e comparativo")
+        title.setProperty("role", "title")
+        self.stats_status = QLabel("Filtre atletas por criterio analitico ou compare dois jogadores.")
+        self.stats_status.setProperty("role", "subtitle")
+        layout.addWidget(title)
+        layout.addWidget(self.stats_status)
+
+        filters = QHBoxLayout()
+        filters.addWidget(self._filter_label("Criterio"))
+        self.stat_criterion_combo = QComboBox()
+        self.stat_criterion_combo.addItems(["", "Gols", "Assistencias", "Desarmes", "Finalizacoes", "Passes", "Precisao"])
+        filters.addWidget(self.stat_criterion_combo)
+        filters.addWidget(self._filter_label("Minimo"))
+        self.stat_minimum_input = QLineEdit()
+        self.stat_minimum_input.setMaximumWidth(90)
+        filters.addWidget(self.stat_minimum_input)
+        filters.addWidget(self._action_button("Filtrar", self._refresh_stats_table))
+        filters.addSpacing(18)
+        self.compare_first_combo = QComboBox()
+        self.compare_second_combo = QComboBox()
+        filters.addWidget(self.compare_first_combo, 1)
+        filters.addWidget(self.compare_second_combo, 1)
+        filters.addWidget(self._action_button("Comparar", self._compare_players))
+        layout.addLayout(filters)
+
+        self.stats_table = QTableWidget(0, 10)
+        self.stats_table.setHorizontalHeaderLabels(["ID", "Jogador", "Clube", "Pos", "Gols", "Assis", "Des", "Fin", "Passes", "Prec"])
+        self._configure_data_table(self.stats_table)
+        layout.addWidget(self.stats_table, 1)
+        return tab
+
+    def _build_ranking_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(4, 8, 4, 8)
+        layout.setSpacing(14)
+
+        title = QLabel("Ranking e historico")
+        title.setProperty("role", "title")
+        self.ranking_status = QLabel("Ranking geral usa pontos acumulados e desempate por saldo.")
+        self.ranking_status.setProperty("role", "subtitle")
+        layout.addWidget(title)
+        layout.addWidget(self.ranking_status)
+
+        tables = QHBoxLayout()
+        self.ranking_table = QTableWidget(0, 4)
+        self.ranking_table.setHorizontalHeaderLabels(["#", "Usuario", "Pontos", "Saldo"])
+        self._configure_data_table(self.ranking_table)
+        self.history_table = QTableWidget(0, 3)
+        self.history_table.setHorizontalHeaderLabels(["Rodada", "Pontos", "Patrimonio"])
+        self._configure_data_table(self.history_table)
+        tables.addWidget(self.ranking_table, 1)
+        tables.addWidget(self.history_table, 1)
+        layout.addLayout(tables, 1)
+        return tab
+
     def _build_table(self, source: str) -> QTableWidget:
         table = QTableWidget(0, 7)
         table.setHorizontalHeaderLabels(["Data", "Temporada", "Rodada", "Mandante", "Placar", "Visitante", "Estadio"])
@@ -650,6 +814,19 @@ class MainWindow(QMainWindow):
         label.setProperty("role", "filterLabel")
         return label
 
+    def _action_button(self, text: str, callback) -> QPushButton:
+        button = QPushButton(text)
+        button.clicked.connect(callback)
+        return button
+
+    def _configure_data_table(self, table: QTableWidget) -> None:
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.verticalHeader().setVisible(False)
+        table.verticalHeader().setDefaultSectionSize(32)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        table.horizontalHeader().setMinimumSectionSize(70)
+
     def _step_button(self, text: str, callback) -> QPushButton:
         button = QPushButton(text)
         button.setProperty("role", "stepButton")
@@ -666,6 +843,256 @@ class MainWindow(QMainWindow):
         date_edit.setCalendarPopup(True)
         date_edit.setDisplayFormat("dd/MM/yyyy")
         date_edit.dateChanged.connect(callback)
+
+    def _refresh_fantasy_views(self) -> None:
+        if hasattr(self, "market_table"):
+            self._refresh_market_table()
+        if hasattr(self, "lineup_table"):
+            self._refresh_lineup_table()
+        if hasattr(self, "stats_table"):
+            self._refresh_stats_table()
+        if hasattr(self, "ranking_table"):
+            self._refresh_ranking_tables()
+
+    def _save_profile(self) -> None:
+        try:
+            profile = self.controller.update_profile(
+                self.profile_name_input.text(),
+                self.profile_email_input.text(),
+                self.profile_username_input.text(),
+            )
+        except ValueError as exc:
+            self._show_error(str(exc))
+            return
+        self.username = profile["username"]
+        self.profile_title.setText(f"Perfil de {self.username}")
+        self.profile_status.setText("Perfil salvo.")
+
+    def _refresh_market_table(self) -> None:
+        rows = self.controller.market_players()
+        self.market_table.setRowCount(len(rows))
+        for row_index, player in enumerate(rows):
+            values = [
+                player.player_id,
+                player.name,
+                player.team,
+                player.position,
+                f"{player.value:.2f}",
+                "Sim" if player.favorite else "Nao",
+                "Sim" if player.owned else "Nao",
+            ]
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                if column == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, player.player_id)
+                table_alignment = Qt.AlignmentFlag.AlignCenter if column in {0, 3, 4, 5, 6} else Qt.AlignmentFlag.AlignLeft
+                item.setTextAlignment(table_alignment)
+                self.market_table.setItem(row_index, column, item)
+        self.market_status.setText(self.controller.market_summary())
+        self._refresh_owned_combo()
+
+    def _refresh_owned_combo(self) -> None:
+        if not hasattr(self, "owned_player_combo"):
+            return
+        current_id = self.owned_player_combo.currentData()
+        self.owned_player_combo.blockSignals(True)
+        self.owned_player_combo.clear()
+        for player in self.controller.owned_players():
+            self.owned_player_combo.addItem(f"{player.name} ({player.position})", player.player_id)
+        index = self.owned_player_combo.findData(current_id)
+        if index >= 0:
+            self.owned_player_combo.setCurrentIndex(index)
+        self.owned_player_combo.blockSignals(False)
+
+    def _buy_selected_player(self) -> None:
+        player_id = self._selected_row_id(self.market_table)
+        if not player_id:
+            return
+        try:
+            self.market_status.setText(self.controller.buy_player(player_id))
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_fantasy_views()
+
+    def _sell_selected_player(self) -> None:
+        player_id = self._selected_row_id(self.market_table)
+        if not player_id:
+            player_id = self.owned_player_combo.currentData() if hasattr(self, "owned_player_combo") else ""
+        if not player_id:
+            return
+        try:
+            self.market_status.setText(self.controller.sell_player(str(player_id)))
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_fantasy_views()
+
+    def _set_market(self, open_: bool) -> None:
+        self.market_status.setText(self.controller.set_market_open(open_))
+        self._refresh_market_table()
+
+    def _toggle_favorite_player(self) -> None:
+        player_id = self._selected_row_id(self.market_table)
+        if not player_id:
+            return
+        favorites = self.controller.favorite_athletes()
+        if player_id in favorites:
+            self.controller.remove_favorite_athlete(player_id)
+        else:
+            self.controller.add_favorite_athlete(player_id)
+        self._refresh_market_table()
+
+    def _set_formation(self, formation: str) -> None:
+        try:
+            self.controller.set_formation(formation)
+            self.lineup_status.setText(self.controller.lineup_summary())
+        except ValueError as exc:
+            self._show_error(str(exc))
+
+    def _add_lineup_player(self) -> None:
+        player_id = self.owned_player_combo.currentData()
+        if not player_id:
+            return
+        try:
+            self.lineup_status.setText(self.controller.add_lineup_player(str(player_id)))
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_lineup_table()
+
+    def _remove_lineup_player(self) -> None:
+        player_id = self._selected_row_id(self.lineup_table)
+        if not player_id:
+            return
+        try:
+            self.lineup_status.setText(self.controller.remove_lineup_player(player_id))
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_lineup_table()
+
+    def _choose_captain(self) -> None:
+        player_id = self._selected_row_id(self.lineup_table)
+        if not player_id:
+            return
+        try:
+            self.lineup_status.setText(self.controller.choose_captain(player_id))
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_lineup_table()
+
+    def _lock_lineup(self) -> None:
+        try:
+            self.lineup_status.setText(self.controller.lock_lineup())
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_lineup_table()
+
+    def _calculate_points(self) -> None:
+        try:
+            self.lineup_status.setText(self.controller.calculate_round_points())
+        except ValueError as exc:
+            self._show_error(str(exc))
+        self._refresh_fantasy_views()
+
+    def _refresh_lineup_table(self) -> None:
+        rows = self.controller.lineup_players()
+        self.lineup_table.setRowCount(len(rows))
+        for row_index, player in enumerate(rows):
+            values = [
+                player.player_id,
+                player.name,
+                player.team,
+                player.position,
+                f"{player.value:.2f}",
+                "Sim" if player.captain else "Nao",
+                f"{player.points:.1f}",
+            ]
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                if column == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, player.player_id)
+                if column in {0, 3, 4, 5, 6}:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.lineup_table.setItem(row_index, column, item)
+        self.lineup_status.setText(self.controller.lineup_summary())
+
+    def _refresh_stats_table(self) -> None:
+        rows = self.controller.stat_rows(
+            self.stat_criterion_combo.currentText(),
+            self.stat_minimum_input.text(),
+        )
+        self.stats_table.setRowCount(len(rows))
+        for row_index, stat in enumerate(rows):
+            values = [
+                stat.player_id,
+                stat.player_name,
+                stat.team,
+                stat.position,
+                str(stat.goals),
+                str(stat.assists),
+                str(stat.tackles),
+                str(stat.shots),
+                str(stat.passes),
+                f"{stat.pass_accuracy:.1f}",
+            ]
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                if column == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, stat.player_id)
+                if column >= 3:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.stats_table.setItem(row_index, column, item)
+        self._refresh_compare_combos(rows)
+
+    def _refresh_compare_combos(self, rows) -> None:
+        for combo in (self.compare_first_combo, self.compare_second_combo):
+            current_id = combo.currentData()
+            combo.blockSignals(True)
+            combo.clear()
+            for stat in rows:
+                combo.addItem(stat.player_name, stat.player_id)
+            index = combo.findData(current_id)
+            if index >= 0:
+                combo.setCurrentIndex(index)
+            combo.blockSignals(False)
+        if self.compare_second_combo.count() > 1 and self.compare_second_combo.currentIndex() == 0:
+            self.compare_second_combo.setCurrentIndex(1)
+
+    def _compare_players(self) -> None:
+        first_id = self.compare_first_combo.currentData()
+        second_id = self.compare_second_combo.currentData()
+        if not first_id or not second_id:
+            return
+        self.stats_status.setText(self.controller.compare_players(str(first_id), str(second_id)))
+
+    def _refresh_ranking_tables(self) -> None:
+        ranking = self.controller.ranking_rows()
+        self.ranking_table.setRowCount(len(ranking))
+        for row_index, row in enumerate(ranking):
+            for column, value in enumerate([row.position, row.username, f"{row.points:.1f}", f"{row.balance:.2f}"]):
+                item = QTableWidgetItem(str(value))
+                if column != 1:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.ranking_table.setItem(row_index, column, item)
+
+        history = self.controller.history_rows()
+        self.history_table.setRowCount(len(history))
+        for row_index, row in enumerate(history):
+            for column, value in enumerate([row.round_number, f"{row.points:.1f}", f"{row.balance:.2f}"]):
+                item = QTableWidgetItem(str(value))
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.history_table.setItem(row_index, column, item)
+
+    def _selected_row_id(self, table: QTableWidget) -> str:
+        selected = table.selectionModel().selectedRows()
+        if not selected:
+            return ""
+        item = table.item(selected[0].row(), 0)
+        if item is None:
+            return ""
+        value = item.data(Qt.ItemDataRole.UserRole)
+        return str(value or item.text())
+
+    def _show_error(self, message: str) -> None:
+        QMessageBox.warning(self, "SofaFut", message)
 
     def _load_seasons(self) -> None:
         seasons = self.controller.seasons()

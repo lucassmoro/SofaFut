@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QApplication
 
 from sofafut.controllers.auth_controller import AuthController
+from sofafut.controllers.main_controller import MainController
 from sofafut.views.login_window import LoginWindow
 from sofafut.views.main_window import MainWindow
 
@@ -26,7 +27,8 @@ class SofaFutApp:
             return
 
         self.login_window.clear_login_status()
-        self.main_window = MainWindow(user.username)
+        controller = MainController(user.username, auth_controller=self.auth_controller)
+        self.main_window = MainWindow(user.username, controller=controller)
         self.main_window.showMaximized()
         self.login_window.close()
 

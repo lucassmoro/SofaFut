@@ -17,7 +17,7 @@ class AuthService:
     def __init__(self, users_path: Path | None = None) -> None:
         self.users_path = users_path or PROJECT_ROOT / "data" / "users.json"
 
-    def cadastrar(self, username: str, senha: str) -> AuthUser:
+    def cadastrar(self, username: str, senha: str, email: str = "", nome: str = "") -> AuthUser:
         username = self._normalizar_username(username)
         if not senha:
             raise ValueError("Informe a senha.")
@@ -26,7 +26,11 @@ class AuthService:
         if username in data["users"]:
             raise ValueError("Usuario ja existe.")
 
-        data["users"][username] = {"password_hash": self._hash_password(senha)}
+        data["users"][username] = {
+            "password_hash": self._hash_password(senha),
+            "email": email.strip(),
+            "nome": nome.strip() or username,
+        }
         self._write_users(data)
         return AuthUser(username=username)
 
@@ -41,6 +45,48 @@ class AuthService:
             raise ValueError("Usuario ou senha invalidos.")
 
         return AuthUser(username=username)
+
+    def perfil(self, username: str) -> dict[str, str]:
+        username = self._normalizar_username(username)
+        data = self._read_users()
+        user_data = data["users"].get(username)
+        if user_data is None:
+            raise ValueError("Usuario nao encontrado.")
+
+        return {
+            "username": username,
+            "nome": user_data.get("nome", username),
+            "email": user_data.get("email", ""),
+        }
+
+    def atualizar_perfil(
+        self,
+        username: str,
+        nome: str | None = None,
+        email: str | None = None,
+        novo_username: str | None = None,
+    ) -> AuthUser:
+        username = self._normalizar_username(username)
+        data = self._read_users()
+        user_data = data["users"].get(username)
+        if user_data is None:
+            raise ValueError("Usuario nao encontrado.")
+
+        target_username = self._normalizar_username(novo_username) if novo_username else username
+        if target_username != username and target_username in data["users"]:
+            raise ValueError("Usuario ja existe.")
+
+        if nome is not None:
+            user_data["nome"] = nome.strip()
+        if email is not None:
+            user_data["email"] = email.strip()
+
+        if target_username != username:
+            data["users"].pop(username)
+            data["users"][target_username] = user_data
+
+        self._write_users(data)
+        return AuthUser(username=target_username)
 
     def _normalizar_username(self, username: str) -> str:
         username = username.strip()

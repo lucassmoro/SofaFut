@@ -12,3 +12,12 @@ class MercadoController:
 
     def vender(self, usuario_id: str, jogador_id: str) -> TimeFantasy:
         return self.mercado_service.vender(usuario_id, jogador_id)
+
+    def fechar_mercado(self) -> None:
+        self.mercado_service.fechar_mercado()
+
+    def abrir_mercado(self) -> None:
+        self.mercado_service.abrir_mercado()
+
+    def elenco(self, usuario_id: str) -> list[Jogador]:
+        return self.mercado_service.elenco(usuario_id)

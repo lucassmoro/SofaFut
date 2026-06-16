@@ -12,6 +12,8 @@ class MercadoService:
     def comprar(self, usuario_id: str, jogador: Jogador) -> TimeFantasy:
         self._validar_mercado_aberto()
         time = self._get_time_by_usuario(usuario_id)
+        if any(item.id == jogador.id for item in time.elenco):
+            raise ValueError("Jogador ja pertence ao time.")
         if time.patrimonio < jogador.valor_mercado:
             raise ValueError("Saldo insuficiente para comprar jogador.")
 
@@ -51,6 +53,12 @@ class MercadoService:
 
     def abrir_mercado(self) -> None:
         self.mercado_aberto = True
+
+    def elenco(self, usuario_id: str) -> list[Jogador]:
+        return list(self._get_time_by_usuario(usuario_id).elenco)
+
+    def transacoes(self, usuario_id: str) -> list[TransacaoMercado]:
+        return list(self._get_time_by_usuario(usuario_id).transacoes)
 
     def _validar_mercado_aberto(self) -> None:
         if not self.mercado_aberto:

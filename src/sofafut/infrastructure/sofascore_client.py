@@ -1,6 +1,8 @@
 import json
+import re
 import time
 from dataclasses import dataclass
+from html import unescape
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -17,12 +19,23 @@ class SofascoreClient:
     def __init__(self, base_url: str = "https://www.sofascore.com/api/v1") -> None:
         self.base_url = base_url.rstrip("/")
         self.headers = {
-            "User-Agent": "Mozilla/5.0",
+            "User-Agent": (
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            ),
             "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.sofascore.com/",
         }
 
     def seasons(self, unique_tournament_id: int) -> list[SofascoreSeason]:
-        payload = self.get(f"unique-tournament/{unique_tournament_id}/seasons")
+        try:
+            payload = self.get(f"unique-tournament/{unique_tournament_id}/seasons")
+        except RuntimeError as exc:
+            if "403" not in str(exc) and "challenge" not in str(exc):
+                raise
+            payload = self._tournament_page_props(unique_tournament_id)
+
         return [
             SofascoreSeason(
                 id=int(season["id"]),
@@ -68,3 +81,32 @@ class SofascoreClient:
                 time.sleep(0.8 * (attempt + 1))
 
         raise RuntimeError(f"Falha ao consultar Sofascore em {request.full_url}: {last_error}") from last_error
+
+    def _tournament_page_props(self, unique_tournament_id: int) -> dict[str, Any]:
+        url = (
+            "https://www.sofascore.com/football/tournament/brazil/"
+            f"brasileirao-serie-a/{unique_tournament_id}"
+        )
+        request = Request(
+            url,
+            headers={
+                **self.headers,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+        )
+
+        try:
+            with urlopen(request, timeout=30) as response:
+                html = response.read().decode("utf-8", "replace")
+        except (ConnectionResetError, HTTPError, URLError) as exc:
+            raise RuntimeError(f"Falha ao consultar pagina Sofascore em {url}: {exc}") from exc
+
+        match = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+            html,
+        )
+        if not match:
+            raise RuntimeError("Pagina do Sofascore nao contem __NEXT_DATA__")
+
+        data = json.loads(unescape(match.group(1)))
+        return data.get("props", {}).get("pageProps", {})
