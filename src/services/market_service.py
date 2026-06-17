@@ -1,33 +1,40 @@
+from abc import ABC, abstractmethod
+
 from src.models.market_transaction import TipoTransacao
 from src.models.market_transaction import TransacaoMercado
 from src.models.player import Player
 from src.models.user import User
 
 
-class MarketService:
+class MarketCommand(ABC):
+    @abstractmethod
+    def executar(self, service):
+        pass
 
-    def __init__(self):
-        self.mercado_aberto = True
 
-    def comprar(self, user: User, jogador: Player):
-        self._validar_mercado_aberto()
-        team = user.team_fantasy
+class ComprarJogadorCommand(MarketCommand):
+    def __init__(self, user: User, jogador: Player):
+        self.user = user
+        self.jogador = jogador
+
+    def executar(self, service):
+        team = self.user.team_fantasy
 
         if len(team.elenco) >= 11:
             raise ValueError("O elenco da rodada ja possui 11 jogadores.")
 
-        if self._buscar_no_elenco(team.elenco, jogador) is not None:
+        if service._buscar_no_elenco(team.elenco, self.jogador) is not None:
             raise ValueError("Jogador ja esta no elenco.")
 
-        valor = self._valor_jogador(jogador)
+        valor = service._valor_jogador(self.jogador)
         if team.patrimonio < valor:
             raise ValueError("Saldo insuficiente para comprar jogador.")
 
         team.patrimonio -= valor
-        team.elenco.append(jogador)
+        team.elenco.append(self.jogador)
         team.transacoes.append(
             TransacaoMercado(
-                jogador=jogador,
+                jogador=self.jogador,
                 tipo=TipoTransacao.COMPRA,
                 valor=valor,
                 patrimonio_apos=team.patrimonio,
@@ -35,22 +42,20 @@ class MarketService:
         )
         return team
 
-    def limpar_elenco_rodada(self, user: User):
-        team = user.team_fantasy
-        team.elenco = []
-        team.transacoes = []
-        team.patrimonio = 110.0
-        return team
 
-    def vender(self, user: User, jogador: Player):
-        self._validar_mercado_aberto()
-        team = user.team_fantasy
-        jogador_elenco = self._buscar_no_elenco(team.elenco, jogador)
+class VenderJogadorCommand(MarketCommand):
+    def __init__(self, user: User, jogador: Player):
+        self.user = user
+        self.jogador = jogador
+
+    def executar(self, service):
+        team = self.user.team_fantasy
+        jogador_elenco = service._buscar_no_elenco(team.elenco, self.jogador)
 
         if jogador_elenco is None:
             raise ValueError("Jogador nao pertence ao elenco.")
 
-        valor = self._valor_jogador(jogador_elenco)
+        valor = service._valor_jogador(jogador_elenco)
         team.elenco.remove(jogador_elenco)
         team.patrimonio += valor
         team.transacoes.append(
@@ -62,6 +67,29 @@ class MarketService:
             )
         )
         return team
+
+
+class MarketService:
+
+    def __init__(self):
+        self.mercado_aberto = True
+
+    def executar_comando(self, command: MarketCommand):
+        self._validar_mercado_aberto()
+        return command.executar(self)
+
+    def comprar(self, user: User, jogador: Player):
+        return self.executar_comando(ComprarJogadorCommand(user, jogador))
+
+    def limpar_elenco_rodada(self, user: User):
+        team = user.team_fantasy
+        team.elenco = []
+        team.transacoes = []
+        team.patrimonio = 110.0
+        return team
+
+    def vender(self, user: User, jogador: Player):
+        return self.executar_comando(VenderJogadorCommand(user, jogador))
 
     def abrir_mercado(self):
         self.mercado_aberto = True

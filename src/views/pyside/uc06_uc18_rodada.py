@@ -85,9 +85,11 @@ class RoundScreen:
         try:
             temporada = int(self.temporada_combo.currentText())
             rodada = int(self.rodada_combo.currentText())
-            dados = self.context.round_controller.carregar_dados_rodada_cache(
+            max_partidas = self.max_partidas()
+            dados = self._carregar_dados_rodada(
                 temporada=temporada,
-                numero_rodada=rodada,
+                rodada=rodada,
+                max_partidas=max_partidas,
             )
             total = len(dados.get("partidas_api", {}).get("response", []))
             cacheadas = len(dados.get("partidas", []))
@@ -98,6 +100,29 @@ class RoundScreen:
             )
         except Exception as exc:
             self.show_error(str(exc))
+
+    def _carregar_dados_rodada(self, temporada, rodada, max_partidas):
+        erro_download = None
+
+        if max_partidas is not None:
+            try:
+                return self.context.round_controller.baixar_dados_rodada(
+                    temporada=temporada,
+                    numero_rodada=rodada,
+                    max_partidas=max_partidas,
+                )
+            except Exception as exc:
+                erro_download = exc
+
+        try:
+            return self.context.round_controller.carregar_dados_rodada_cache(
+                temporada=temporada,
+                numero_rodada=rodada,
+            )
+        except Exception:
+            if erro_download is not None:
+                raise erro_download
+            raise
 
     def listar_jogadores_rodada(self):
         try:
@@ -151,4 +176,11 @@ class RoundScreen:
 
     def max_partidas(self):
         valor = self.max_partidas_input.text().strip()
-        return int(valor) if valor else None
+        if not valor:
+            return None
+
+        max_partidas = int(valor)
+        if max_partidas < 1:
+            raise ValueError("Max. partidas deve ser maior que zero.")
+
+        return max_partidas

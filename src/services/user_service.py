@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from src.models.user import User
 from src.models.lineup import Lineup
 from src.repositories.users_database import UserDataBase
@@ -9,6 +11,63 @@ Apesar de chamar os metodos de edicao de dados da classe Cliente
 ele é responsavel por validar senhas e se o usuario esta presente na base de dados
 antes de chamar os metodos de edicao de dados
 """
+
+
+class ProfileUpdateTemplate(ABC):
+    def __init__(self, service, username):
+        self.service = service
+        self.username = username
+
+    def executar(self):
+        self.service._verificar_permissao(self.username)
+        user = self.service.user_database.search_user(self.username)
+
+        if user is None:
+            return "Usuario nao encontrado"
+
+        return self._aplicar(user)
+
+    @abstractmethod
+    def _aplicar(self, user):
+        pass
+
+
+class AlterarEmailTemplate(ProfileUpdateTemplate):
+    def __init__(self, service, username, novo_email):
+        super().__init__(service, username)
+        self.novo_email = novo_email
+
+    def _aplicar(self, user):
+        user.alterar_email(self.novo_email)
+        return "Email atualizado"
+
+
+class AlterarNomeTemplate(ProfileUpdateTemplate):
+    def __init__(self, service, username, novo_username):
+        super().__init__(service, username)
+        self.novo_username = novo_username
+
+    def _aplicar(self, user):
+        return self.service.user_database.update_username(
+            self.username,
+            self.novo_username,
+        )
+
+
+class AlterarSenhaTemplate(ProfileUpdateTemplate):
+    def __init__(self, service, username, senha_atual, nova_senha):
+        super().__init__(service, username)
+        self.senha_atual = senha_atual
+        self.nova_senha = nova_senha
+
+    def _aplicar(self, user):
+        if user.verificar_senha(self.senha_atual):
+            user.alterar_senha(self.nova_senha)
+            return "Senha atualizada"
+
+        return "Senha incorreta"
+
+
 class UserService:
 
     def __init__(self, user_database : UserDataBase, session : Session):
@@ -21,42 +80,13 @@ class UserService:
         
 
     def alterar_email(self, username, novo_email):
-
-        self._verificar_permissao(username)
-
-        user = self.user_database.search_user(username)
-
-        if user is None:
-            return "Usuario nao encontrado"
-        
-        user.alterar_email(novo_email)
-        return "Email atualizado"
+        return AlterarEmailTemplate(self, username, novo_email).executar()
     
     def alterar_nome(self, username, novo_username):
-
-        self._verificar_permissao(username)
-
-        user = self.user_database.search_user(username)
-
-        if user is None:
-            return "Usuario nao encontrado"
-        
-        return self.user_database.update_username(username, novo_username)
+        return AlterarNomeTemplate(self, username, novo_username).executar()
     
     def alterar_senha(self, username, senha_atual, nova_senha):
-
-        self._verificar_permissao(username)
-
-        user = self.user_database.search_user(username)
-
-        if user is None: 
-            return "Usuario nao encontrado"
-        
-        if user.verificar_senha(senha_atual):
-            user.alterar_senha(nova_senha)
-            return "Senha atualizada"
-        else: 
-            return "Senha incorreta"
+        return AlterarSenhaTemplate(self, username, senha_atual, nova_senha).executar()
         
     def atribuir_pontuacao(self, username, pontuacao):
 
