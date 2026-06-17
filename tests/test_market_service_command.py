@@ -89,7 +89,9 @@ class MarketServiceCommandTest(unittest.TestCase):
 
     def test_mercado_fechado_bloqueia_compra_e_venda(self):
         jogador = self.jogador()
+        self.assertTrue(self.service.mercado_esta_aberto())
         self.service.fechar_mercado()
+        self.assertFalse(self.service.mercado_esta_aberto())
 
         with self.assertRaisesRegex(ValueError, "Mercado fechado"):
             self.service.comprar(self.user, jogador)
@@ -100,6 +102,9 @@ class MarketServiceCommandTest(unittest.TestCase):
         self.assertEqual(self.user.team_fantasy.patrimonio, 110.0)
         self.assertEqual(self.user.team_fantasy.elenco, [])
         self.assertEqual(self.user.team_fantasy.transacoes, [])
+
+        self.service.abrir_mercado()
+        self.assertTrue(self.service.mercado_esta_aberto())
 
 
 if __name__ == "__main__":

@@ -91,6 +91,9 @@ class MarketService:
     def vender(self, user: User, jogador: Player):
         return self.executar_comando(VenderJogadorCommand(user, jogador))
 
+    def mercado_esta_aberto(self):
+        return self.mercado_aberto
+
     def abrir_mercado(self):
         self.mercado_aberto = True
 

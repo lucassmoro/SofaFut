@@ -341,6 +341,9 @@ class AppController:
     def fechar_mercado(self):
         self.market_service.fechar_mercado()
 
+    def mercado_esta_aberto(self):
+        return self.market_service.mercado_esta_aberto()
+
     def comparar_jogadores(self, jogador_a, jogador_b):
         return self.player_comparison_service.comparar(jogador_a, jogador_b)
 

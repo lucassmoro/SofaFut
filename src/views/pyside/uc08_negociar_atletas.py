@@ -30,6 +30,9 @@ class MarketScreen:
         self.market_catalog_table = None
         self.market_roster_table = None
         self.market_status = None
+        self.buy_button = None
+        self.sell_button = None
+        self.toggle_market_button = None
         self.transactions_text = None
 
     def build(self):
@@ -43,9 +46,9 @@ class MarketScreen:
             self.ordenar_jogadores_mercado
         )
         catalog_col.addWidget(self.market_catalog_table, 1)
-        buy_button = QPushButton("Comprar selecionado")
-        buy_button.clicked.connect(self.comprar_selecionado)
-        catalog_col.addWidget(buy_button)
+        self.buy_button = QPushButton("Comprar selecionado")
+        self.buy_button.clicked.connect(self.comprar_selecionado)
+        catalog_col.addWidget(self.buy_button)
         favorite_player_button = QPushButton("Favoritar jogador")
         favorite_player_button.clicked.connect(self.favoritar_jogador_mercado)
         catalog_col.addWidget(favorite_player_button)
@@ -54,13 +57,18 @@ class MarketScreen:
         catalog_col.addWidget(favorite_club_button)
 
         roster_col = QVBoxLayout()
+        status_row = QHBoxLayout()
         self.market_status = QLabel("")
-        roster_col.addWidget(self.market_status)
+        status_row.addWidget(self.market_status, 1)
+        self.toggle_market_button = QPushButton("")
+        self.toggle_market_button.clicked.connect(self.alternar_mercado)
+        status_row.addWidget(self.toggle_market_button)
+        roster_col.addLayout(status_row)
         self.market_roster_table = table(["ID", "Jogador", "Time", "Pos", "Valor"])
         roster_col.addWidget(self.market_roster_table, 1)
-        sell_button = QPushButton("Vender selecionado")
-        sell_button.clicked.connect(self.vender_selecionado)
-        roster_col.addWidget(sell_button)
+        self.sell_button = QPushButton("Vender selecionado")
+        self.sell_button.clicked.connect(self.vender_selecionado)
+        roster_col.addWidget(self.sell_button)
         confirm_button = QPushButton("Confirmar elenco")
         confirm_button.clicked.connect(self.confirmar_elenco)
         roster_col.addWidget(confirm_button)
@@ -71,7 +79,15 @@ class MarketScreen:
 
         layout.addLayout(catalog_col, 3)
         layout.addLayout(roster_col, 2)
+        self._atualizar_controles_mercado()
         return tab
+
+    def alternar_mercado(self):
+        if self.context.market_controller.mercado_esta_aberto():
+            self.context.market_controller.fechar_mercado()
+        else:
+            self.context.market_controller.abrir_mercado()
+        self.atualizar()
 
     def comprar_selecionado(self):
         linhas = selected_rows(self.market_catalog_table)
@@ -140,9 +156,11 @@ class MarketScreen:
 
         self.preencher_catalogo()
         fill_players_table(self.market_roster_table, elenco)
+        mercado = "Aberto" if self.context.market_controller.mercado_esta_aberto() else "Fechado"
         self.market_status.setText(
             f"Patrimonio: {self.context.market_controller.patrimonio(self.context.username):.2f} | "
-            f"Elenco: {len(elenco)} jogadores"
+            f"Elenco: {len(elenco)} jogadores | "
+            f"Mercado: {mercado}"
         )
         self.transactions_text.setPlainText(
             "\n".join(
@@ -157,10 +175,25 @@ class MarketScreen:
                 ]
             )
         )
+        self._atualizar_controles_mercado()
         self.refresh_lineup()
         self.refresh_favorites()
         self.refresh_history()
         self.refresh_evolution()
+
+    def _atualizar_controles_mercado(self):
+        if self.toggle_market_button is None:
+            return
+
+        mercado_aberto = self.context.market_controller.mercado_esta_aberto()
+        self.toggle_market_button.setText(
+            "Fechar mercado" if mercado_aberto else "Abrir mercado"
+        )
+
+        if self.buy_button is not None:
+            self.buy_button.setEnabled(mercado_aberto)
+        if self.sell_button is not None:
+            self.sell_button.setEnabled(mercado_aberto)
 
     def preencher_catalogo(self):
         jogadores_rodada = self.context.lineup_controller.selecionar_players_do_catalogo(

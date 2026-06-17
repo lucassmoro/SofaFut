@@ -25,3 +25,12 @@ class MarketController:
 
     def historico_patrimonio(self, username):
         return self.app_controller.historico_patrimonio(username)
+
+    def mercado_esta_aberto(self):
+        return self.app_controller.mercado_esta_aberto()
+
+    def abrir_mercado(self):
+        return self.app_controller.abrir_mercado()
+
+    def fechar_mercado(self):
+        return self.app_controller.fechar_mercado()
