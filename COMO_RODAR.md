@@ -74,46 +74,6 @@ Execute o programa em modo grafico:
 python -m src.main
 ```
 
-## Modo console
+## Observacao sobre a API Football
 
-O modo console roda no terminal, sem abrir a interface grafica. Ele executa um fluxo automatico de teste do sistema.
-
-No Windows PowerShell:
-
-```powershell
-$env:SOFAFUT_VIEW="console"
-python -m src.main
-```
-
-Para voltar ao modo grafico na mesma sessao:
-
-```powershell
-Remove-Item Env:\SOFAFUT_VIEW
-python -m src.main
-```
-
-No Linux Fedora:
-
-```bash
-SOFAFUT_VIEW=console python -m src.main
-```
-
-## Chave da API Football
-
-Algumas telas e fluxos usam dados da API Football. Para baixar dados novos, configure a variavel de ambiente `API_FOOTBALL_KEY`.
-
-No Windows PowerShell:
-
-```powershell
-$env:API_FOOTBALL_KEY="sua_chave_aqui"
-python -m src.main
-```
-
-No Linux Fedora:
-
-```bash
-export API_FOOTBALL_KEY="sua_chave_aqui"
-python -m src.main
-```
-
-Sem essa chave, o sistema pode funcionar apenas com dados ja existentes em cache.
+Algumas telas usam dados da API Football. Para baixar dados novos, configure a variavel de ambiente `API_FOOTBALL_KEY` antes de executar o programa. Sem essa chave, o sistema depende dos dados ja existentes em cache.
