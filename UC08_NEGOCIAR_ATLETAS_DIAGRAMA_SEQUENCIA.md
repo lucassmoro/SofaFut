@@ -10,11 +10,9 @@ sequenceDiagram
     participant BuyCmd as ComprarJogadorCommand
     participant SellCmd as VenderJogadorCommand
     participant Team as TeamFantasy
-    participant LineupCtrl as LineupController
     participant Refresh as Callbacks de atualizacao
 
-    Usuario->>Tela: Seleciona atleta no catalogo
-    Usuario->>Tela: Clica em "Comprar selecionado"
+    Usuario->>Tela: Seleciona atleta no catalogo e compra
     Tela->>Tela: selected_rows(market_catalog_table)
 
     alt Nenhuma linha selecionada
@@ -30,60 +28,25 @@ sequenceDiagram
         MarketSvc->>MarketSvc: _validar_mercado_aberto()
 
         alt Mercado fechado
-            MarketSvc-->>Tela: excecao
-            Tela->>Tela: show_error(mensagem)
+            MarketSvc-->>Tela: show_error(mensagem)
         else Mercado aberto
             MarketSvc->>BuyCmd: executar(service)
-            BuyCmd->>Team: verificar limite de 11 jogadores
+            BuyCmd->>Team: validar limite, duplicidade e saldo
 
-            alt Elenco ja possui 11 jogadores
-                BuyCmd-->>Tela: excecao
-                Tela->>Tela: show_error(mensagem)
-            else Limite permitido
-                BuyCmd->>MarketSvc: _buscar_no_elenco(elenco, jogador)
-                BuyCmd->>Team: verificar jogador duplicado
-
-                alt Jogador ja esta no elenco
-                    BuyCmd-->>Tela: excecao
-                    Tela->>Tela: show_error(mensagem)
-                else Jogador novo
-                    BuyCmd->>MarketSvc: _valor_jogador(jogador)
-                    BuyCmd->>Team: verificar saldo suficiente
-
-                    alt Saldo insuficiente
-                        BuyCmd-->>Tela: excecao
-                        Tela->>Tela: show_error(mensagem)
-                    else Compra permitida
-                        BuyCmd->>Team: debitar patrimonio
-                        BuyCmd->>Team: adicionar jogador ao elenco
-                        BuyCmd->>Team: registrar transacao de compra
-                        BuyCmd-->>MarketSvc: team atualizado
-                        MarketSvc-->>Tela: team atualizado
-                        Tela->>Tela: atualizar()
-                        Tela->>MarketCtrl: listar_elenco(username)
-                        Tela->>Tela: context.jogadores_escalados = elenco
-                        Tela->>Tela: limpar capitao se saiu do elenco
-                        Tela->>Tela: preencher_catalogo()
-                        Tela->>LineupCtrl: selecionar_players_do_catalogo(jogadores_disponiveis)
-                        LineupCtrl-->>Tela: jogadores da rodada no catalogo
-                        Tela->>MarketCtrl: listar_elenco(username)
-                        Tela->>Tela: remover do catalogo jogadores ja comprados
-                        Tela->>Tela: preencher tabela de catalogo
-                        Tela->>Tela: preencher tabela do elenco
-                        Tela->>MarketCtrl: patrimonio(username)
-                        Tela->>MarketCtrl: listar_transacoes(username)
-                        Tela->>Refresh: refresh_lineup()
-                        Tela->>Refresh: refresh_favorites()
-                        Tela->>Refresh: refresh_history()
-                        Tela->>Refresh: refresh_evolution()
-                    end
-                end
+            alt Compra invalida
+                BuyCmd-->>Tela: show_error(mensagem)
+            else Compra permitida
+                BuyCmd->>MarketSvc: _valor_jogador(jogador)
+                BuyCmd->>Team: debitar patrimonio, adicionar jogador e registrar transacao
+                BuyCmd-->>MarketSvc: team atualizado
+                MarketSvc-->>Tela: team atualizado
+                Tela->>Tela: atualizar catalogo, elenco, patrimonio e transacoes
+                Tela->>Refresh: atualizar telas dependentes
             end
         end
     end
 
-    Usuario->>Tela: Seleciona atleta do elenco
-    Usuario->>Tela: Clica em "Vender selecionado"
+    Usuario->>Tela: Seleciona atleta do elenco e vende
     Tela->>Tela: selected_rows(market_roster_table)
 
     alt Nenhuma linha selecionada
@@ -101,40 +64,20 @@ sequenceDiagram
         MarketSvc->>MarketSvc: _validar_mercado_aberto()
 
         alt Mercado fechado
-            MarketSvc-->>Tela: excecao
-            Tela->>Tela: show_error(mensagem)
+            MarketSvc-->>Tela: show_error(mensagem)
         else Mercado aberto
             MarketSvc->>SellCmd: executar(service)
             SellCmd->>MarketSvc: _buscar_no_elenco(elenco, jogador)
-            SellCmd->>Team: localizar jogador no elenco
 
             alt Jogador nao pertence ao elenco
-                SellCmd-->>Tela: excecao
-                Tela->>Tela: show_error(mensagem)
+                SellCmd-->>Tela: show_error(mensagem)
             else Venda permitida
                 SellCmd->>MarketSvc: _valor_jogador(jogador_elenco)
-                SellCmd->>Team: remover jogador do elenco
-                SellCmd->>Team: creditar patrimonio
-                SellCmd->>Team: registrar transacao de venda
+                SellCmd->>Team: remover jogador, creditar patrimonio e registrar transacao
                 SellCmd-->>MarketSvc: team atualizado
                 MarketSvc-->>Tela: team atualizado
-                Tela->>Tela: atualizar()
-                Tela->>MarketCtrl: listar_elenco(username)
-                Tela->>Tela: context.jogadores_escalados = elenco
-                Tela->>Tela: limpar capitao se saiu do elenco
-                Tela->>Tela: preencher_catalogo()
-                Tela->>LineupCtrl: selecionar_players_do_catalogo(jogadores_disponiveis)
-                LineupCtrl-->>Tela: jogadores da rodada no catalogo
-                Tela->>MarketCtrl: listar_elenco(username)
-                Tela->>Tela: remover do catalogo jogadores ja comprados
-                Tela->>Tela: preencher tabela de catalogo
-                Tela->>Tela: preencher tabela do elenco
-                Tela->>MarketCtrl: patrimonio(username)
-                Tela->>MarketCtrl: listar_transacoes(username)
-                Tela->>Refresh: refresh_lineup()
-                Tela->>Refresh: refresh_favorites()
-                Tela->>Refresh: refresh_history()
-                Tela->>Refresh: refresh_evolution()
+                Tela->>Tela: atualizar catalogo, elenco, patrimonio e transacoes
+                Tela->>Refresh: atualizar telas dependentes
             end
         end
     end

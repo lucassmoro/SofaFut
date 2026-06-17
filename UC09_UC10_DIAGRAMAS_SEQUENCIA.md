@@ -11,14 +11,15 @@ sequenceDiagram
     participant App as AppController
     participant MarketSvc as MarketService
     participant SellCmd as VenderJogadorCommand
+    participant Team as TeamFantasy
     participant Refresh as Callback refresh_market
 
-    Usuario->>Mercado: Compra jogadores no mercado
+    Usuario->>Mercado: Compra 11 jogadores no mercado
     Mercado->>Market: listar_elenco(username)
     Market-->>Mercado: elenco atual
     Mercado->>Mercado: context.jogadores_escalados = elenco
     Mercado->>Tela: refresh_lineup()
-    Tela->>Tela: preencher tabela com context.jogadores_escalados
+    Tela->>Tela: preencher tabela do elenco
 
     Usuario->>Mercado: Clica em "Confirmar elenco"
     Mercado->>Mercado: validar len(context.jogadores_escalados) == 11
@@ -34,9 +35,9 @@ sequenceDiagram
     Usuario->>Tela: Clica em "Definir capitao"
     Tela->>Tela: selected_rows(lineup_table)
 
-    alt Nenhuma linha selecionada
+    alt Sem selecao
         Tela-->>Usuario: nenhuma acao
-    else Linha selecionada
+    else Com selecao
         Tela->>Tela: context.capitao = context.jogadores_escalados[linha]
         Tela->>Tela: preencher()
     end
@@ -45,31 +46,28 @@ sequenceDiagram
     Usuario->>Tela: Clica em "Remover"
     Tela->>Tela: selected_rows(lineup_table)
 
-    alt Nenhuma linha selecionada
+    alt Sem selecao
         Tela-->>Usuario: nenhuma acao
-    else Linha selecionada
+    else Com selecao
         Tela->>Tela: jogador = context.jogadores_escalados[linha]
         Tela->>Market: vender(username, jogador)
         Market->>App: vender_jogador(username, jogador)
         App->>App: _buscar_usuario_autorizado(username)
         App->>MarketSvc: vender(user, jogador)
         MarketSvc->>SellCmd: criar(user, jogador)
-        MarketSvc->>MarketSvc: executar_comando(command)
-        MarketSvc->>MarketSvc: _validar_mercado_aberto()
+        MarketSvc->>MarketSvc: executar_comando e validar mercado
 
         alt Erro na venda
-            MarketSvc-->>Tela: excecao de mercado fechado
-            Tela->>Tela: show_error(mensagem)
-        else Mercado aberto
+            MarketSvc-->>Tela: show_error(mensagem)
+        else Venda permitida
             MarketSvc->>SellCmd: executar(service)
             SellCmd->>MarketSvc: _buscar_no_elenco(elenco, jogador)
 
             alt Jogador nao pertence ao elenco
-                SellCmd-->>Tela: excecao
-                Tela->>Tela: show_error(mensagem)
+                SellCmd-->>Tela: show_error(mensagem)
             else Venda realizada
                 SellCmd->>MarketSvc: _valor_jogador(jogador_elenco)
-                SellCmd->>SellCmd: remover jogador, creditar patrimonio e registrar transacao
+                SellCmd->>Team: remover jogador, creditar patrimonio e registrar transacao
                 SellCmd-->>MarketSvc: team atualizado
                 MarketSvc-->>Tela: team atualizado
                 Tela->>Refresh: refresh_market()
@@ -89,65 +87,54 @@ sequenceDiagram
     participant App as AppController
     participant MatchSvc as MatchService
     participant RoundRepo as RoundRepository
-    participant Team as TeamFantasyService
+    participant TeamSvc as TeamFantasyService
+    participant RoundModel as Round
+    participant Stats as MatchPlayerStats
+    participant Fantasy as PlayerFantasy
+    participant LineupModel as Lineup
+    participant Team as TeamFantasy
     participant Strategy as PontuacaoStrategy
     participant Refresh as Callbacks de atualizacao
 
     Usuario->>Tela: Clica em "Calcular pontuacao"
-    Tela->>Tela: validar len(context.jogadores_escalados) == 11
+    Tela->>Tela: validar elenco completo e capitao
 
-    alt Escalacao incompleta
-        Tela->>Tela: show_error("Voce precisa comprar exatamente 11 jogadores para a rodada.")
-    else Escalacao completa
-        Tela->>Tela: validar context.capitao definido
+    alt Dados invalidos
+        Tela->>Tela: show_error(mensagem)
+    else Dados validos
+        Tela->>Tela: rodada = get_rodada()
+        Tela->>Lineup: criar_escalacao_fantasy(jogadores_escalados, capitao)
+        Lineup->>Fantasy: criar jogadores com capitao
+        Lineup-->>Tela: jogadores_fantasy
 
-        alt Capitao ausente
-            Tela->>Tela: show_error("Escolha um capitao antes de calcular a pontuacao.")
-        else Capitao definido
-            Tela->>Tela: rodada = get_rodada()
-            Tela->>Lineup: criar_escalacao_fantasy(jogadores_escalados, capitao)
-            Lineup-->>Tela: jogadores_fantasy
-            Tela->>Round: montar_rodada_por_cache(temporada, rodada, jogadores_escalados)
-            Round->>App: montar_rodada_por_cache_rodada_api_football(...)
-            App->>MatchSvc: montar_rodada_por_cache_rodada_api_football(...)
-            MatchSvc->>MatchSvc: carregar_dados_rodada_api_football(liga, temporada, rodada)
-            MatchSvc->>MatchSvc: cruzar jogadores escalados com atuacoes do cache
+        Tela->>Round: montar_rodada_por_cache(temporada, rodada, jogadores_escalados)
+        Round->>App: montar_rodada_por_cache_rodada_api_football(...)
+        App->>MatchSvc: montar rodada pelo cache
+        MatchSvc->>Stats: converter atuacoes encontradas
+        MatchSvc-->>RoundModel: rodada_model
+        RoundModel-->>Tela: rodada_model
 
-            loop Para cada jogador escalado
-                alt Atuacao encontrada no cache
-                    MatchSvc->>MatchSvc: converter atuacao em MatchPlayerStats
-                else Atuacao nao encontrada
-                    MatchSvc->>MatchSvc: ignorar jogador na partida
-                end
-            end
+        Tela->>Round: adicionar_rodada(rodada_model)
+        Round->>App: adicionar_rodada(rodada_model)
+        App->>RoundRepo: adicionar_rodada(rodada_model)
 
-            MatchSvc-->>App: rodada_model
-            App-->>Round: rodada_model
-            Round-->>Tela: rodada_model
-            Tela->>Round: adicionar_rodada(rodada_model)
-            Round->>App: adicionar_rodada(rodada_model)
-            App->>RoundRepo: adicionar_rodada(rodada_model)
-            Tela->>Lineup: executar_rodada(username, rodada, jogadores_fantasy)
-            Lineup->>App: executar_rodada(username, rodada, jogadores_fantasy)
-            App->>App: _buscar_usuario_autorizado(username)
-            App->>Team: executar_rodada(user, rodada, jogadores_fantasy, rodadas_repo)
-            Team->>Team: localizar pontuacao anterior da rodada
-            Team->>Team: montar_escalacao(user, rodada, jogadores_fantasy)
-            Team->>RoundRepo: buscar_por_numero(rodada)
+        Tela->>Lineup: executar_rodada(username, rodada, jogadores_fantasy)
+        Lineup->>App: executar_rodada(username, rodada, jogadores_fantasy)
+        App->>App: _buscar_usuario_autorizado(username)
+        App->>TeamSvc: executar_rodada(user, rodada, jogadores_fantasy, rodadas_repo)
+        TeamSvc->>LineupModel: montar escalacao da rodada
+        TeamSvc->>Team: salvar escalacao
+        TeamSvc->>RoundRepo: buscar_por_numero(rodada)
 
-            loop Para cada jogador com atuacao na rodada
-                Team->>Strategy: calcular(MatchPlayerStats, capitao)
-                Strategy-->>Team: pontuacao do jogador
-            end
-
-            Team->>Team: atualizar pontuacao da escalacao
-            Team->>Team: atualizar pontuacao acumulada do usuario
-            Team-->>Tela: pontuacao_total
-            Tela->>Lineup: buscar_escalacao(rodada)
-            Lineup-->>Tela: escalacao calculada
-            Tela->>Tela: montar texto com pontuacao total e individual
-            Tela->>Refresh: refresh_ranking()
-            Tela->>Refresh: refresh_evolution()
+        loop Para cada atuacao da escalacao
+            TeamSvc->>Strategy: calcular(MatchPlayerStats, capitao)
+            Strategy-->>Fantasy: pontuacao do jogador
         end
+
+        TeamSvc->>LineupModel: atualizar pontuacao da escalacao
+        TeamSvc->>Team: atualizar pontuacao acumulada
+        TeamSvc-->>Tela: pontuacao_total
+        Tela->>Tela: exibir pontuacao total e individual
+        Tela->>Refresh: refresh_ranking() e refresh_evolution()
     end
 ```

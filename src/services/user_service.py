@@ -6,12 +6,6 @@ from src.repositories.users_database import UserDataBase
 from src.services.session import Session
 from src.services.team_fantasy_service import TeamFantasyService
 
-"""Essa classe é a responsavel por executar a edicao dos dados.
-Apesar de chamar os metodos de edicao de dados da classe Cliente
-ele é responsavel por validar senhas e se o usuario esta presente na base de dados
-antes de chamar os metodos de edicao de dados
-"""
-
 
 class ProfileUpdateTemplate(ABC):
     def __init__(self, service, username):
